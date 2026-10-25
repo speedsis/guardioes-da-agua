@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guardiões da Água VR</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: lobby de feira em tela cheia sobre a cena 3D; painéis centrais com a marca da escola */
+:root{
+  --navy:#133B63;        /* azul-marinho institucional (logo Educação Adventista) */
+  --gold:#D9A520;        /* dourado/mostarda da logo */
+  --aqua:#2FA8DD;        /* azul-água do mascote */
+  --aqua-deep:#0E6FA3;
+  --paper:#F6F9FC;       /* fundo claro dos painéis */
+  --ink:#10273D;
+  --ok:#2E9E5B;
+  --bad:#C94F3D;
+}
+html,body{height:100%;}
+body{background:var(--navy);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;overflow:hidden;}
+#scene-wrap{position:fixed;inset:0;}
+#scene-wrap canvas{display:block;}
+#ui{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-bottom,0px));}
+.screen{pointer-events:auto;background:var(--paper);border-radius:18px;max-width:560px;width:100%;
+  box-shadow:0 18px 50px rgba(6,22,40,.45);padding:26px 24px;text-align:center;max-height:92%;overflow-y:auto;}
+.screen .logo{width:96px;height:96px;object-fit:contain;border-radius:14px;background:#fff;padding:6px;margin:0 auto 8px;display:block;}
+h1{font-size:1.7rem;line-height:1.15;margin:.2em 0 .1em;color:var(--navy);letter-spacing:.3px;text-wrap:balance;}
+h1 .agua{color:var(--aqua-deep);}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--navy);background:#E7EFF6;border:1px solid #CFE0EE;border-radius:999px;padding:4px 12px;margin:6px 0 2px;}
+.sub{color:#4A6076;font-size:.95rem;margin:.3em 0 1em;}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:15px 18px;font-size:1.05rem;font-weight:800;
+  cursor:pointer;margin:10px 0 0;letter-spacing:.02em;}
+.btn-vr{background:var(--navy);color:#fff;}
+.btn-2d{background:var(--aqua);color:#fff;}
+.btn-ghost{background:transparent;color:var(--navy);border:2px solid #CBD9E6;font-weight:700;}
+.btn-gold{background:var(--gold);color:#3A2A05;}
+.btn:active{transform:translateY(1px);}
+input[type=text]{width:100%;box-sizing:border-box;border:2px solid #C4D4E2;border-radius:12px;padding:13px 14px;
+  font-size:1.1rem;text-align:center;background:#fff;color:var(--ink);}
+input[type=text]:focus{outline:none;border-color:var(--aqua);}
+.hint{font-size:.82rem;color:#5B7288;margin-top:10px;}
+.tut{display:flex;flex-direction:column;gap:10px;text-align:left;margin:14px 0 4px;}
+.tut div{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid #DDE8F1;border-radius:12px;padding:11px 13px;}
+.tut .n{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--aqua);color:#fff;font-weight:800;
+  display:flex;align-items:center;justify-content:center;}
+.tut p{margin:2px 0 0;font-size:.93rem;min-width:0;}
+.bigscore{font-size:3.4rem;font-weight:900;color:var(--navy);line-height:1;font-variant-numeric:tabular-nums;margin:.1em 0;}
+.classif{font-size:1.25rem;font-weight:800;color:var(--aqua-deep);}
+.water{font-size:1rem;color:#1F6E8C;font-weight:700;margin-top:4px;}
+.medals{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0 4px;}
+.medal{background:#FFF4D6;border:1px solid #EACB7A;color:#6A4D08;border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:700;}
+.dica{background:#E9F6EE;border:1px solid #BFE3CC;color:#1E5B37;border-radius:12px;padding:11px 13px;font-size:.9rem;margin-top:14px;text-align:left;}
+ol.rank{list-style:none;margin:14px 0 4px;padding:0;text-align:left;}
+ol.rank li{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #DDE8F1;border-radius:10px;
+  padding:9px 12px;margin-bottom:7px;font-variant-numeric:tabular-nums;}
+ol.rank li .pos{width:30px;font-weight:900;color:var(--gold);}
+ol.rank li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;}
+ol.rank li .sc{font-weight:900;color:var(--navy);}
+.empty{color:#5B7288;font-size:.9rem;margin:16px 0;}
+#hud2d{position:fixed;left:0;right:0;display:none;justify-content:center;pointer-events:none;z-index:5;
+  top:env(safe-area-inset-top,0px);padding:10px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));}
+#hud2d .bar{pointer-events:auto;display:flex;gap:14px;align-items:center;background:rgba(13,34,56,.88);color:#fff;
+  border-radius:999px;padding:9px 18px;font-weight:800;font-variant-numeric:tabular-nums;font-size:1rem;}
+#hud2d .bar span b{color:#8FD9FF;}
+#hud2d button{border:0;border-radius:999px;background:var(--bad);color:#fff;font-weight:800;padding:7px 13px;cursor:pointer;font-size:.8rem;}
+#toast{position:fixed;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;border-radius:12px;
+  padding:11px 18px;font-weight:700;display:none;z-index:9;max-width:88%;text-align:center;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 18px);}
+.foot{font-size:.72rem;color:#73879A;margin-top:16px;}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+</style>
+
+<script>
+/* Diagnóstico: qualquer erro aparece na tela em vez de travar em silêncio */
+window.__gaguaErro = function(msg){
+  try{
+    var t=document.getElementById('toast');
+    if(t){ t.textContent=msg; t.style.display='block'; }
+  }catch(e){}
+};
+window.addEventListener('error', function(e){
+  if(e && e.message) window.__gaguaErro('Erro: '+e.message);
+});
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.6.0/aframe.min.js"></script>
+
+<script>
+/* ===== componentes registrados ANTES da cena existir ===== */
+if (window.AFRAME) {
+  /* texto desenhado em canvas (acentos PT-BR, sem fontes externas) */
+  AFRAME.registerComponent('ctext', {
+    schema: { text:{default:''}, size:{default:48}, color:{default:'#10273D'},
+              bg:{default:''}, w:{default:512}, h:{default:128} },
+    init: function(){
+      this.canvas = document.createElement('canvas');
+      this.canvas.width = this.data.w; this.canvas.height = this.data.h;
+      this.ctx = this.canvas.getContext('2d');
+      this.tex = new THREE.CanvasTexture(this.canvas);
+      var self = this;
+      this.apply = function(){
+        var mesh = self.el.getObject3D('mesh');
+        if (mesh && mesh.material){ mesh.material.map = self.tex; mesh.material.transparent = true; mesh.material.needsUpdate = true; }
+      };
+      this.el.addEventListener('object3dset', this.apply);
+      this.apply(); this.draw();
+    },
+    update: function(){ if (this.ctx) this.draw(); },
+    draw: function(){
+      var c=this.ctx, d=this.data, W=d.w, H=d.h;
+      c.clearRect(0,0,W,H);
+      if (d.bg){
+        c.fillStyle = d.bg; var r=Math.min(28,H/4);
+        c.beginPath();
+        c.moveTo(r,0); c.lineTo(W-r,0); c.arcTo(W,0,W,r,r); c.lineTo(W,H-r); c.arcTo(W,H,W-r,H,r);
+        c.lineTo(r,H); c.arcTo(0,H,0,H-r,r); c.lineTo(0,r); c.arcTo(0,0,r,0,r); c.closePath(); c.fill();
+      }
+      c.fillStyle=d.color; c.textAlign='center'; c.textBaseline='middle';
+      c.font='bold '+d.size+'px "Segoe UI", Arial, sans-serif';
+      var lines=String(d.text).split('\n');
+      var lh=d.size*1.22, y0=H/2-(lines.length-1)*lh/2;
+      for(var i=0;i<lines.length;i++){ c.fillText(lines[i], W/2, y0+i*lh, W-30); }
+      this.tex.needsUpdate=true;
+    }
+  });
+  /* placas de pontos sempre viradas para o jogador */
+  AFRAME.registerComponent('look-at-cam',{ tick:function(){
+    var cam=document.getElementById('cam'); if(!cam) return;
+    var v=cam.object3D.getWorldPosition(new THREE.Vector3());
+    this.el.object3D.lookAt(v);
+  }});
+}
+</script>
+
+</head>
+<body>
+<div id="scene-wrap">
+<a-scene id="cena" vr-mode-ui="enabled: false" renderer="antialias: true; colorManagement: true" background="color: #AEE7FF">
+  <a-assets timeout="4000">
+    <img id="logoimg" src="logo_adventista.jpeg" crossorigin="anonymous">
+  </a-assets>
+
+  <!-- luz -->
+  <a-entity light="type: ambient; intensity: 0.95; color: #FFFFFF"></a-entity>
+  <a-entity light="type: directional; intensity: 0.55; color: #FFF6E0" position="4 9 3"></a-entity>
+
+  <!-- céu / sol / chão -->
+  <a-sphere position="18 16 -26" radius="2.2" color="#FFE27A" material="shader: flat"></a-sphere>
+  <a-circle rotation="-90 0 0" position="0 0 0" radius="30" color="#7CBF6B"></a-circle>
+  <a-circle rotation="-90 0 0" position="0 0.01 -1" radius="10.5" color="#E8DFC8"></a-circle>
+
+  <!-- árvores decorativas -->
+  <a-entity position="-11 0 -11"><a-cylinder radius="0.22" height="1.6" position="0 0.8 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.5" height="2.6" position="0 2.6 0" color="#4E9A4E"></a-cone></a-entity>
+  <a-entity position="11 0 -11"><a-cylinder radius="0.22" height="1.6" position="0 0.8 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.5" height="2.6" position="0 2.6 0" color="#5AA657"></a-cone></a-entity>
+  <a-entity position="12 0 6"><a-cylinder radius="0.2" height="1.4" position="0 0.7 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.3" height="2.3" position="0 2.3 0" color="#4E9A4E"></a-cone></a-entity>
+  <a-entity position="-12 0 6"><a-cylinder radius="0.2" height="1.4" position="0 0.7 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.3" height="2.3" position="0 2.3 0" color="#5AA657"></a-cone></a-entity>
+
+  <!-- pórtico com a logo da escola (atrás do ponto inicial) -->
+  <a-entity position="0 0 5.5" rotation="0 180 0">
+    <a-box position="-1.6 1.5 0" width="0.22" height="3" depth="0.22" color="#133B63"></a-box>
+    <a-box position="1.6 1.5 0" width="0.22" height="3" depth="0.22" color="#133B63"></a-box>
+    <a-box position="0 3.1 0" width="3.6" height="0.24" depth="0.26" color="#D9A520"></a-box>
+    <a-plane position="0 2.35 0.02" width="1.3" height="1.3" material="src: #logoimg; shader: flat"></a-plane>
+    <a-plane position="0 1.35 0.02" width="3.1" height="0.55" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 44; color: #FFFFFF; bg: #133B63; w: 640; h: 128" material="shader: flat; transparent: true"></a-plane>
+  </a-entity>
+
+  <!-- MASCOTE GOTINHA -->
+  <a-entity id="mascote" position="0 0 -2.6">
+    <a-entity animation="property: position; from: 0 0.05 0; to: 0 0.28 0; dir: alternate; dur: 1400; loop: true; easing: easeInOutSine">
+      <a-sphere radius="0.42" scale="1 1.22 1" position="0 0.75 0" color="#3EB8F0"></a-sphere>
+      <a-cone radius-bottom="0.18" height="0.34" position="0 1.35 0" color="#3EB8F0"></a-cone>
+      <a-sphere radius="0.075" position="-0.14 0.85 0.36" color="#FFFFFF"></a-sphere>
+      <a-sphere radius="0.075" position="0.14 0.85 0.36" color="#FFFFFF"></a-sphere>
+      <a-sphere radius="0.036" position="-0.14 0.85 0.425" color="#10273D"></a-sphere>
+      <a-sphere radius="0.036" position="0.14 0.85 0.425" color="#10273D"></a-sphere>
+      <a-box width="0.17" height="0.045" depth="0.03" position="0 0.64 0.4" color="#0E3A57"></a-box>
+    </a-entity>
+    <a-plane id="balao" position="0 2.1 0" width="2.5" height="0.86" material="shader: flat; transparent: true"
+      ctext="text: Olá, Guardião!; size: 42; color: #10273D; bg: #FFFFFF; w: 800; h: 276"></a-plane>
+  </a-entity>
+
+  <!-- ===== ESTAÇÕES ===== -->
+
+  <!-- BANHEIRO -->
+  <a-entity position="-6.2 0 -4.2" rotation="0 56 0">
+    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#CFE9F2"></a-plane>
+    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: BANHEIRO; size: 56; color: #FFFFFF; bg: #0E6FA3; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-box position="0 0.08 0.75" width="1.5" height="0.16" depth="1.5" color="#BBD7E2"></a-box>
+    <a-cylinder position="0.65 2.5 0.35" radius="0.05" height="0.9" color="#9AA7B0"></a-cylinder>
+    <a-sphere position="0.65 2.05 0.5" radius="0.13" scale="1 0.6 1" color="#8795A0"></a-sphere>
+    <a-entity id="agua_banheiro">
+      <a-cylinder position="0.65 1.15 0.5" radius="0.07" height="1.8" color="#8FD9FF" opacity="0.65"></a-cylinder>
+      <a-sphere radius="0.05" color="#BDE9FF" position="0.65 2 0.5" animation="property: position; from: 0.65 2 0.5; to: 0.65 0.25 0.5; dur: 650; loop: true; easing: linear"></a-sphere>
+      <a-sphere radius="0.05" color="#BDE9FF" position="0.65 2 0.5" animation="property: position; from: 0.65 2 0.5; to: 0.65 0.25 0.5; dur: 650; delay: 320; loop: true; easing: linear"></a-sphere>
+    </a-entity>
+    <a-cylinder id="alvo_banheiro" class="clickable" position="-0.15 1.7 0.35" radius="0.17" height="0.1" rotation="90 0 0" color="#E24B3B"
+      animation="property: scale; from: 1 1 1; to: 1.18 1.18 1.18; dir: alternate; dur: 700; loop: true"></a-cylinder>
+    <a-plane position="-0.15 1.32 0.35" width="1.5" height="0.3" ctext="text: Feche o registro!; size: 40; color: #0E3A57; bg: #FFFFFF; w: 600; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_banheiro" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+  </a-entity>
+
+  <!-- COZINHA -->
+  <a-entity position="0 0 -7.4">
+    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#F4E3C6"></a-plane>
+    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: COZINHA; size: 56; color: #FFFFFF; bg: #C07A2B; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-box position="0 0.55 0.7" width="2.2" height="1.1" depth="0.9" color="#D9B98C"></a-box>
+    <a-box position="0 1.11 0.7" width="0.9" height="0.1" depth="0.6" color="#AFC4CF"></a-box>
+    <a-cylinder position="-0.35 1.45 0.7" radius="0.045" height="0.6" color="#9AA7B0"></a-cylinder>
+    <a-cylinder position="-0.17 1.73 0.7" radius="0.045" height="0.42" rotation="0 0 -90" color="#9AA7B0"></a-cylinder>
+    <a-entity id="agua_cozinha">
+      <a-cylinder position="0 1.45 0.7" radius="0.05" height="0.56" color="#8FD9FF" opacity="0.65"></a-cylinder>
+      <a-sphere radius="0.045" color="#BDE9FF" position="0 1.7 0.7" animation="property: position; from: 0 1.7 0.7; to: 0 1.15 0.7; dur: 520; loop: true; easing: linear"></a-sphere>
+    </a-entity>
+    <a-cylinder id="alvo_cozinha" class="clickable" position="-0.65 1.78 0.7" radius="0.14" height="0.1" rotation="90 0 0" color="#E24B3B"
+      animation="property: scale; from: 1 1 1; to: 1.18 1.18 1.18; dir: alternate; dur: 700; loop: true"></a-cylinder>
+    <a-plane position="-0.65 2.15 0.7" width="1.6" height="0.3" ctext="text: Feche a torneira!; size: 40; color: #5A3A10; bg: #FFFFFF; w: 640; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_cozinha" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+  </a-entity>
+
+  <!-- JARDIM -->
+  <a-entity position="6.2 0 -4.2" rotation="0 -56 0">
+    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#D8EEC9"></a-plane>
+    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: JARDIM; size: 56; color: #FFFFFF; bg: #3F8F3F; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-entity position="-0.9 0 0.7"><a-cylinder radius="0.04" height="0.4" position="0 0.2 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.14" position="0 0.46 0" color="#E86BA0"></a-sphere></a-entity>
+    <a-entity position="-0.45 0 0.95"><a-cylinder radius="0.04" height="0.35" position="0 0.17 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.13" position="0 0.4 0" color="#F2C53D"></a-sphere></a-entity>
+    <a-entity position="0 0 0.7"><a-cylinder radius="0.04" height="0.42" position="0 0.21 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.14" position="0 0.48 0" color="#8E6BE8"></a-sphere></a-entity>
+    <a-entity id="agua_jardim" position="0.95 0 0.75">
+      <a-cone radius-bottom="0.3" radius-top="0.02" height="0.9" position="0 0.55 0" rotation="55 0 0" color="#8FD9FF" opacity="0.5"></a-cone>
+    </a-entity>
+    <a-entity id="alvo_jardim_bom" class="clickable" position="0.45 0 1.35">
+      <a-cylinder radius="0.18" height="0.3" position="0 0.15 0" color="#2E86C1"></a-cylinder>
+      <a-cylinder radius="0.03" height="0.3" position="0.2 0.22 0" rotation="0 0 -50" color="#2E86C1"></a-cylinder>
+      <a-circle position="0 0.46 0" rotation="-90 0 0" radius="0.2" color="#2FA8DD" animation="property: scale; from: 1 1 1; to: 1.25 1.25 1.25; dir: alternate; dur: 700; loop: true"></a-circle>
+    </a-entity>
+    <a-plane position="0.45 0.85 1.35" width="1.2" height="0.28" ctext="text: Regador; size: 44; color: #0E3A57; bg: #FFFFFF; w: 480; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="alvo_jardim_mau" class="clickable" position="1.3 0 1.1">
+      <a-torus radius="0.2" radius-tubular="0.045" rotation="90 0 0" position="0 0.08 0" color="#2E7D32"></a-torus>
+      <a-cylinder radius="0.045" height="0.4" position="0 0.2 0.15" rotation="60 0 0" color="#2E7D32"></a-cylinder>
+    </a-entity>
+    <a-plane position="1.3 0.75 1.1" width="1.3" height="0.28" ctext="text: Mangueira; size: 44; color: #0E3A57; bg: #FFFFFF; w: 520; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="0 2.6 0.05" width="3.3" height="0.42" ctext="text: Qual usar para regar?; size: 46; color: #1E5B37; bg: #FFFFFF; w: 820; h: 104" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_jardim" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+  </a-entity>
+
+  <!-- GARAGEM -->
+  <a-entity position="5.2 0 3.4" rotation="0 -124 0">
+    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#D7D7DE"></a-plane>
+    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: GARAGEM; size: 56; color: #FFFFFF; bg: #5A5A72; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-entity position="0 0 0.8">
+      <a-box width="1.7" height="0.45" depth="0.8" position="0 0.45 0" color="#E24B3B"></a-box>
+      <a-box width="0.95" height="0.35" depth="0.75" position="0 0.83 0" color="#F0776A"></a-box>
+      <a-cylinder radius="0.17" height="0.12" rotation="0 0 90" position="-0.55 0.2 0.42" color="#222730"></a-cylinder>
+      <a-cylinder radius="0.17" height="0.12" rotation="0 0 90" position="0.55 0.2 0.42" color="#222730"></a-cylinder>
+    </a-entity>
+    <a-entity id="agua_garagem" position="-1.2 0 1.15">
+      <a-cone radius-bottom="0.22" radius-top="0.02" height="0.8" position="0 0.5 0" rotation="60 0 0" color="#8FD9FF" opacity="0.5"></a-cone>
+    </a-entity>
+    <a-entity id="alvo_garagem_bom" class="clickable" position="1.25 0 1.3">
+      <a-cylinder radius="0.2" height="0.34" position="0 0.17 0" color="#2E86C1"></a-cylinder>
+      <a-circle position="0 0.4 0" rotation="-90 0 0" radius="0.22" color="#2FA8DD" animation="property: scale; from: 1 1 1; to: 1.25 1.25 1.25; dir: alternate; dur: 700; loop: true"></a-circle>
+    </a-entity>
+    <a-plane position="1.25 0.85 1.3" width="1.0" height="0.28" ctext="text: Balde; size: 46; color: #0E3A57; bg: #FFFFFF; w: 400; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="alvo_garagem_mau" class="clickable" position="-1.25 0 1.4">
+      <a-torus radius="0.2" radius-tubular="0.045" rotation="90 0 0" position="0 0.08 0" color="#2E7D32"></a-torus>
+      <a-cylinder radius="0.045" height="0.4" position="0 0.2 0.15" rotation="60 0 0" color="#2E7D32"></a-cylinder>
+    </a-entity>
+    <a-plane position="-1.25 0.75 1.4" width="1.3" height="0.28" ctext="text: Mangueira; size: 44; color: #0E3A57; bg: #FFFFFF; w: 520; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="0 2.6 0.05" width="3.3" height="0.42" ctext="text: Como lavar o carro?; size: 46; color: #33334A; bg: #FFFFFF; w: 820; h: 104" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_garagem" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+  </a-entity>
+
+  <!-- ÁREA DE SERVIÇO -->
+  <a-entity position="-5.2 0 3.4" rotation="0 124 0">
+    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#E7D8EE"></a-plane>
+    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: ÁREA DE SERVIÇO; size: 50; color: #FFFFFF; bg: #6E4E8E; w: 760; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-cylinder radius="0.07" height="2.6" rotation="0 0 90" position="0 2.2 0.18" color="#8795A0"></a-cylinder>
+    <a-cylinder radius="0.07" height="1.0" position="-1.3 1.7 0.18" color="#8795A0"></a-cylinder>
+    <a-entity id="agua_servico" position="0.2 2.2 0.25">
+      <a-sphere radius="0.045" color="#BDE9FF" animation="property: position; from: 0 0 0; to: 0.25 -1.4 0.45; dur: 600; loop: true; easing: linear"></a-sphere>
+      <a-sphere radius="0.045" color="#BDE9FF" animation="property: position; from: 0 0 0; to: -0.2 -1.5 0.5; dur: 700; delay: 250; loop: true; easing: linear"></a-sphere>
+      <a-sphere radius="0.045" color="#BDE9FF" animation="property: position; from: 0 0 0; to: 0.05 -1.45 0.55; dur: 650; delay: 450; loop: true; easing: linear"></a-sphere>
+      <a-cylinder radius="0.16" height="0.04" position="0.05 -1.5 0.45" color="#8FD9FF" opacity="0.6"></a-cylinder>
+    </a-entity>
+    <a-sphere id="alvo_servico" class="clickable" position="0.2 2.2 0.18" radius="0.17" color="#E2A63B"
+      animation="property: scale; from: 1 1 1; to: 1.2 1.2 1.2; dir: alternate; dur: 700; loop: true"></a-sphere>
+    <a-plane position="0.2 1.6 0.3" width="2.0" height="0.3" ctext="text: Conserte o vazamento!; size: 40; color: #4A2E66; bg: #FFFFFF; w: 800; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_servico" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+  </a-entity>
+
+  <!-- pontos de teletransporte -->
+  <a-circle class="clickable tp" data-tp="-4.6 0 -3.1" position="-4.6 0.02 -3.1" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
+  <a-circle class="clickable tp" data-tp="0 0 -5.5" position="0 0.02 -5.5" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
+  <a-circle class="clickable tp" data-tp="4.6 0 -3.1" position="4.6 0.02 -3.1" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
+  <a-circle class="clickable tp" data-tp="3.8 0 2.4" position="3.8 0.02 2.4" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
+  <a-circle class="clickable tp" data-tp="-3.8 0 2.4" position="-3.8 0.02 2.4" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
+  <a-circle class="clickable tp" data-tp="0 0 0" position="0 0.02 0.9" rotation="-90 0 0" radius="0.5" color="#D9A520" opacity="0.9"></a-circle>
+
+  <!-- jogador -->
+  <a-entity id="rig" position="0 0 0">
+    <a-entity id="cam" camera look-controls wasd-controls="acceleration: 28" position="0 1.6 0">
+      <a-plane id="hudvr" position="0 0.62 -1.35" width="1.7" height="0.26" material="shader: flat; transparent: true"
+        ctext="text: ; size: 52; color: #FFFFFF; bg: #10273D; w: 1020; h: 156"></a-plane>
+      <a-plane id="painelfinal" visible="false" position="0 0 -1.7" width="2.3" height="1.5" material="shader: flat; transparent: true"
+        ctext="text: ; size: 54; color: #10273D; bg: #F6F9FC; w: 1000; h: 650"></a-plane>
+    </a-entity>
+    <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 25" line="color: #2FA8DD"></a-entity>
+    <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 25" line="color: #2FA8DD"></a-entity>
+  </a-entity>
+  <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable; far: 60"></a-entity>
+</a-scene>
+</div>
+
+<!-- HUD 2D -->
+<div id="hud2d"><div class="bar">
+  <span>⏱ <b id="h2time">3:00</b></span><span>⭐ <b id="h2pts">0</b></span><span>✔ <b id="h2done">0/5</b></span>
+  <button id="btnAbort" type="button">ENCERRAR</button>
+</div></div>
+
+<!-- TELAS -->
+<div id="ui">
+  <div class="screen" id="scrSplash">
+    <img class="logo" src="logo_adventista.jpeg" alt="Logo Educação Adventista">
+    <div class="tag">Educação Adventista · 7ª série</div>
+    <h1>GUARDIÕES <span class="agua">DA ÁGUA</span> VR</h1>
+    <p class="sub">Pequenas ações, grandes resultados</p>
+  </div>
+
+  <div class="screen" id="scrMenu" hidden>
+    <img class="logo" src="logo_adventista.jpeg" alt="Logo Educação Adventista">
+    <div class="tag">Feira de Ciências · 7ª série</div>
+    <h1>GUARDIÕES <span class="agua">DA ÁGUA</span> VR</h1>
+    <p class="sub">Encontre 5 desperdícios em 3 minutos e salve o máximo de água!</p>
+    <input type="text" id="inpNome" maxlength="16" placeholder="Seu nome ou apelido" autocomplete="off">
+    <button class="btn btn-vr" id="btnMenuVR" type="button">🥽 INICIAR MISSÃO EM VR</button>
+    <button class="btn btn-2d" id="btnMenu2D" type="button">📱 INICIAR NO MODO 2D</button>
+    <button class="btn btn-ghost" id="btnMenuRank" type="button">🏆 Ver ranking</button>
+    <p class="foot">Projeto da 7ª série — Educação Adventista · Meta Quest 2</p>
+  </div>
+
+  <div class="screen" id="scrTutorial" hidden>
+    <div class="tag">Tutorial rápido</div>
+    <h1>Como jogar</h1>
+    <div class="tut">
+      <div><span class="n">1</span><p><b>Aponte e aperte o gatilho</b> do controle (no 2D: mire e clique/toque).</p></div>
+      <div><span class="n">2</span><p><b>Círculos azuis no chão</b> teletransportam você até cada cômodo.</p></div>
+      <div><span class="n">3</span><p><b>Feche o que desperdiça</b>: registros vermelhos, vazamento e escolha os objetos certos. Escolha errada: <b>−20 pontos</b>.</p></div>
+      <div><span class="n">4</span><p><b>3 minutos</b> no relógio. Máximo: <b>700 pontos</b>. Boa sorte, Guardião!</p></div>
+    </div>
+    <button class="btn btn-gold" id="btnGo" type="button">▶ COMEÇAR AGORA</button>
+    <p class="hint" id="tutMode"></p>
+  </div>
+
+  <div class="screen" id="scrResult" hidden>
+    <img class="logo" src="logo_adventista.jpeg" alt="Logo Educação Adventista">
+    <div class="tag" id="resNome">Guardião</div>
+    <div class="bigscore" id="resPts">0</div>
+    <div class="classif" id="resClass">Aprendiz da Água</div>
+    <div class="water" id="resAgua">💧 0 litros de água preservados*</div>
+    <div class="medals" id="resMedals"></div>
+    <div class="dica" id="resDica"></div>
+    <button class="btn btn-vr" id="btnDeNovo" type="button">🔁 PRÓXIMO GUARDIÃO</button>
+    <button class="btn btn-ghost" id="btnResRank" type="button">🏆 Ver ranking</button>
+    <p class="foot">*Estimativa educativa. Projeto da 7ª série — Educação Adventista. <span id="resAuto"></span></p>
+  </div>
+
+  <div class="screen" id="scrRank" hidden>
+    <img class="logo" src="logo_adventista.jpeg" alt="Logo Educação Adventista">
+    <div class="tag">Feira de Ciências · Educação Adventista</div>
+    <h1>🏆 Ranking — Top 10</h1>
+    <ol class="rank" id="rankList"></ol>
+    <p class="empty" id="rankEmpty" hidden>Ainda não há pontuações. Seja o primeiro Guardião!</p>
+    <button class="btn btn-vr" id="btnRankBack" type="button">VOLTAR</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* Avanço do splash independente de tudo: nunca mais travar na tela inicial */
+setTimeout(function(){
+  var s=document.getElementById('scrSplash'), m=document.getElementById('scrMenu');
+  if (s && !s.hidden && m){ s.hidden=true; m.hidden=false; }
+},2200);
+</script>
+
+<script>
+(function(){
+'use strict';
+/* ================== ESTADO ================== */
+var DUR = 180;
+var PONTOS = { banheiro:100, cozinha:100, jardim:150, garagem:150, servico:200 };
+var LITROS = { banheiro:45, cozinha:30, jardim:50, garagem:80, servico:100 };
+var FRASES = {
+  banheiro:'Isso! Fechar o chuveiro ao se ensaboar\neconomiza até 45 litros!',
+  cozinha:'Muito bem! Torneira fechada ao ensaboar\na louça poupa 30 litros!',
+  jardim:'Ótima escolha! O regador usa muito\nmenos água que a mangueira!',
+  garagem:'Perfeito! Lavar o carro com balde\neconomiza até 80 litros!',
+  servico:'Vazamento consertado! Um cano furado\ndesperdiça mais de 100 litros por dia!'
+};
+var DICAS = [
+  'Dica: um banho de 5 minutos com o registro fechado ao se ensaboar economiza dezenas de litros.',
+  'Dica: escove os dentes com a torneira fechada — abra só para enxaguar.',
+  'Dica: uma torneira pingando pode desperdiçar mais de 40 litros por dia. Avise um adulto!',
+  'Dica: reaproveite a água da chuva para regar as plantas.',
+  'Dica: lavar calçada com vassoura (e não com mangueira) economiza centenas de litros.'
+];
+var S=null, timerId=null, autoId=null, modoVR=false, tem3D=!!window.AFRAME;
+
+var $ = function(id){ return document.getElementById(id); };
+var scene = $('cena'), rig = $('rig');
+
+function show(id){
+  ['scrSplash','scrMenu','scrTutorial','scrResult','scrRank'].forEach(function(s){
+    var el=$(s); if(el) el.hidden = (s!==id);
+  });
+  $('ui').style.display = id ? 'flex' : 'none';
+}
+function toast(msg){
+  var t=$('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(t._h); t._h=setTimeout(function(){ t.style.display='none'; },4000);
+}
+
+/* ================== ÁUDIO (WebAudio, sem arquivos) ================== */
+var AC=null, aguaGain=null;
+function audioInit(){
+  if (AC) return;
+  try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    var len=AC.sampleRate*2, buf=AC.createBuffer(1,len,AC.sampleRate), ch=buf.getChannelData(0);
+    for(var i=0;i<len;i++){ ch[i]=Math.random()*2-1; }
+    var src=AC.createBufferSource(); src.buffer=buf; src.loop=true;
+    var f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900;
+    aguaGain=AC.createGain(); aguaGain.gain.value=0;
+    src.connect(f); f.connect(aguaGain); aguaGain.connect(AC.destination);
+    src.start();
+  }catch(e){ AC=null; }
+}
+function aguaVolume(){
+  if(!AC||!S||!aguaGain) return;
+  var abertas=0; ['banheiro','cozinha','jardim','garagem','servico'].forEach(function(k){ if(!S.done[k]) abertas++; });
+  try{ aguaGain.gain.linearRampToValueAtTime(0.028*abertas, AC.currentTime+0.4); }catch(e){}
+}
+function nota(freq,t0,dur,tipo,vol){
+  if(!AC) return;
+  try{
+    var o=AC.createOscillator(), g=AC.createGain();
+    o.type=tipo||'triangle'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,AC.currentTime+t0);
+    g.gain.linearRampToValueAtTime(vol||0.18,AC.currentTime+t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+t0+dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(AC.currentTime+t0); o.stop(AC.currentTime+t0+dur+0.05);
+  }catch(e){}
+}
+function somAcerto(){ nota(660,0,0.18); nota(880,0.1,0.18); nota(1320,0.2,0.3); }
+function somErro(){ nota(140,0,0.3,'square',0.12); }
+function somTick(){ nota(1000,0,0.07,'sine',0.1); }
+function somFanfarra(){ [523,659,784,1047].forEach(function(f,i){ nota(f,i*0.14,0.32); }); nota(1047,0.7,0.6); }
+
+function falar(txt){
+  try{
+    if(!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(txt.replace(/\n/g,' '));
+    u.lang='pt-BR'; u.rate=1.05; u.pitch=1.15;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ================== RANKING (localStorage, melhor esforço) ================== */
+function rankLoad(){ try{ return JSON.parse(localStorage.getItem('gagua_rank')||'[]'); }catch(e){ return []; } }
+function rankSave(nome,pts){
+  try{
+    var r=rankLoad(); r.push({n:nome,s:pts});
+    r.sort(function(a,b){ return b.s-a.s; });
+    localStorage.setItem('gagua_rank', JSON.stringify(r.slice(0,10)));
+  }catch(e){}
+}
+function rankRender(){
+  var r=rankLoad(), ul=$('rankList'); ul.innerHTML='';
+  $('rankEmpty').hidden = r.length>0;
+  r.forEach(function(e,i){
+    var li=document.createElement('li');
+    var medal = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)+'º'));
+    li.innerHTML='<span class="pos">'+medal+'</span><span class="nm"></span><span class="sc">'+e.s+' pts</span>';
+    li.querySelector('.nm').textContent=e.n;
+    ul.appendChild(li);
+  });
+}
+
+/* ================== MASCOTE / HUD / POPUP (toleram falta do 3D) ================== */
+function setCtext(id, txt){
+  var el=$(id); if(!el) return;
+  try{ el.setAttribute('ctext','text',txt); }catch(e){}
+}
+var balaoH=null;
+function balao(txt, voz){
+  setCtext('balao', txt);
+  if(voz!==false) falar(txt);
+  clearTimeout(balaoH);
+  balaoH=setTimeout(function(){ setCtext('balao','Vamos lá, Guardião!'); },5000);
+}
+function fmt(t){ var m=Math.floor(t/60), s=t%60; return m+':'+(s<10?'0':'')+s; }
+function hud(){
+  if(!S) return;
+  setCtext('hudvr','⏱ '+fmt(S.t)+'    ⭐ '+S.pts+'    ✔ '+S.feitos+'/5');
+  $('h2time').textContent=fmt(S.t); $('h2pts').textContent=S.pts; $('h2done').textContent=S.feitos+'/5';
+}
+function popup(el, txt, cor){
+  if(!tem3D || !el || !el.object3D) return;
+  try{
+    var p=document.createElement('a-plane');
+    var wp=el.object3D.getWorldPosition(new THREE.Vector3());
+    p.setAttribute('position', wp.x+' '+(wp.y+0.45)+' '+wp.z);
+    p.setAttribute('width','1.3'); p.setAttribute('height','0.42');
+    p.setAttribute('material','shader: flat; transparent: true');
+    p.setAttribute('ctext','text: '+txt+'; size: 76; color: '+cor+'; w: 520; h: 168');
+    p.setAttribute('look-at-cam','');
+    p.setAttribute('animation','property: position; to: '+wp.x+' '+(wp.y+1.35)+' '+wp.z+'; dur: 1100; easing: easeOutQuad');
+    scene.appendChild(p);
+    setTimeout(function(){ if(p.parentNode) p.parentNode.removeChild(p); },1200);
+  }catch(e){}
+}
+
+/* ================== LÓGICA DO JOGO ================== */
+function novoEstado(){
+  return { pts:0, litros:0, feitos:0, erros:0, t:DUR,
+           done:{banheiro:false,cozinha:false,jardim:false,garagem:false,servico:false} };
+}
+function setVis(id,v){ var el=$(id); if(el) el.setAttribute('visible', v?'true':'false'); }
+function acerto(key, alvoEl){
+  if(!S || S.done[key]) return;
+  S.done[key]=true; S.feitos++; S.pts+=PONTOS[key]; S.litros+=LITROS[key];
+  setVis('agua_'+key,false); setVis('ok_'+key,true);
+  if(alvoEl) alvoEl.setAttribute('visible','false');
+  somAcerto(); aguaVolume();
+  popup(alvoEl, '+'+PONTOS[key], '#2E9E5B');
+  balao(FRASES[key]);
+  hud();
+  if(S.feitos===5) setTimeout(function(){ fimDeJogo(true); },900);
+}
+function erro(key, alvoEl){
+  if(!S || S.done[key]) return;
+  S.pts=Math.max(0,S.pts-20); S.erros++;
+  somErro();
+  popup(alvoEl,'-20','#C94F3D');
+  balao('Ops! Assim gasta muita água.\nTente a outra opção!');
+  hud();
+}
+function liga(id,fn){ var el=$(id); if(el) el.addEventListener('click',function(){ fn(this); }); }
+function ligarCliques(){
+  liga('alvo_banheiro',function(el){ acerto('banheiro',el); });
+  liga('alvo_cozinha',function(el){ acerto('cozinha',el); });
+  liga('alvo_servico',function(el){ acerto('servico',el); });
+  liga('alvo_jardim_bom',function(el){ acerto('jardim',el); });
+  liga('alvo_jardim_mau',function(el){ erro('jardim',el); });
+  liga('alvo_garagem_bom',function(el){ acerto('garagem',el); });
+  liga('alvo_garagem_mau',function(el){ erro('garagem',el); });
+  Array.prototype.forEach.call(document.querySelectorAll('.tp'),function(pad){
+    pad.addEventListener('click',function(){
+      var p=this.getAttribute('data-tp').split(' ');
+      rig.setAttribute('position', p[0]+' 0 '+p[2]);
+      nota(440,0,0.08,'sine',0.08);
+    });
+  });
+}
+function resetCena(){
+  if(!tem3D) return;
+  ['banheiro','cozinha','jardim','garagem','servico'].forEach(function(k){
+    setVis('agua_'+k,true); setVis('ok_'+k,false);
+  });
+  ['alvo_banheiro','alvo_cozinha','alvo_servico','alvo_jardim_bom','alvo_garagem_bom'].forEach(function(id){ setVis(id,true); });
+  setVis('painelfinal',false);
+  if(rig) rig.setAttribute('position','0 0 0');
+}
+function comecar(vr){
+  if(!tem3D){ toast('O motor 3D não carregou. Verifique a internet e recarregue a página.'); return; }
+  modoVR=vr; audioInit();
+  S=novoEstado(); resetCena(); hud(); aguaVolume();
+  show(null);
+  $('hud2d').style.display='flex';
+  if(vr){
+    try{
+      var p=scene.enterVR();
+      if(p && p.catch) p.catch(function(){ toast('VR não ativou aqui — jogando no modo 2D. No Quest, abra o link direto no Meta Quest Browser.'); });
+    }catch(e){ toast('VR não ativou — jogando no modo 2D.'); }
+  }
+  balao('Atenção, Guardião! Encontre os 5\ndesperdícios. Você tem 3 minutos!');
+  clearInterval(timerId);
+  timerId=setInterval(function(){
+    S.t--;
+    if(S.t<=10 && S.t>0) somTick();
+    hud();
+    if(S.t<=0) fimDeJogo(false);
+  },1000);
+}
+function classif(p){
+  if(p>=600) return 'Mestre da Água';
+  if(p>=400) return 'Guardião da Água';
+  if(p>=200) return 'Protetor da Água';
+  return 'Aprendiz da Água';
+}
+function medalhas(cedo){
+  var m=[];
+  if(S.done.servico) m.push('🔧 Caçador de Vazamentos');
+  if(S.feitos===5) m.push('👀 Olho Vivo — 5/5');
+  if(cedo && S.t>=45) m.push('⚡ Mãos Rápidas');
+  if(S.pts===700 && S.erros===0) m.push('🏅 Guardião Perfeito');
+  if(m.length===0) m.push('💧 Guardião em Treinamento');
+  return m;
+}
+function fimDeJogo(cedo){
+  if(!S || S.fim) return;
+  S.fim=true;
+  clearInterval(timerId);
+  if(AC&&aguaGain){ try{ aguaGain.gain.linearRampToValueAtTime(0,AC.currentTime+0.5); }catch(e){} }
+  somFanfarra();
+  var nome=($('inpNome').value||'Guardião').trim()||'Guardião';
+  rankSave(nome,S.pts);
+  var cls=classif(S.pts);
+  falar('Parabéns, '+nome+'! Você fez '+S.pts+' pontos e é '+cls+'!');
+  setCtext('painelfinal','MISSÃO CONCLUÍDA!\n\n'+nome+'\n⭐ '+S.pts+' pontos\n'+cls+'\n💧 '+S.litros+' litros preservados');
+  setVis('painelfinal',true);
+  setTimeout(function(){
+    try{ if(scene && scene.is && scene.is('vr-mode')) scene.exitVR(); }catch(e){}
+    $('hud2d').style.display='none';
+    $('resNome').textContent=nome+' · 7ª série';
+    $('resPts').textContent=S.pts;
+    $('resClass').textContent=cls;
+    $('resAgua').textContent='💧 '+S.litros+' litros de água preservados*';
+    var md=$('resMedals'); md.innerHTML='';
+    medalhas(cedo).forEach(function(t){ var s=document.createElement('span'); s.className='medal'; s.textContent=t; md.appendChild(s); });
+    $('resDica').textContent=DICAS[Math.floor(Math.random()*DICAS.length)];
+    show('scrResult');
+    var resto=30;
+    $('resAuto').textContent='Volta ao menu em 30 s.';
+    clearInterval(autoId);
+    autoId=setInterval(function(){
+      resto--; $('resAuto').textContent='Volta ao menu em '+resto+' s.';
+      if(resto<=0){ clearInterval(autoId); voltarMenu(); }
+    },1000);
+  }, 5200);
+}
+function voltarMenu(){
+  clearInterval(autoId); clearInterval(timerId);
+  S=null; resetCena();
+  $('inpNome').value='';
+  $('hud2d').style.display='none';
+  show('scrMenu');
+}
+
+/* ================== FLUXO DE TELAS (sempre funciona, mesmo sem 3D) ================== */
+var modoEscolhido=false; var voltarPara='scrMenu';
+$('btnMenuVR').addEventListener('click',function(){ modoEscolhido=true; audioInit(); $('tutMode').textContent='Modo escolhido: VR (Meta Quest). Pegue os dois controles!'; show('scrTutorial'); });
+$('btnMenu2D').addEventListener('click',function(){ modoEscolhido=false; audioInit(); $('tutMode').textContent='Modo escolhido: 2D. Mouse/toque para olhar, WASD anda, clique nos círculos azuis para se mover.'; show('scrTutorial'); });
+$('btnGo').addEventListener('click',function(){ comecar(modoEscolhido); });
+$('btnMenuRank').addEventListener('click',function(){ voltarPara='scrMenu'; rankRender(); show('scrRank'); });
+$('btnResRank').addEventListener('click',function(){ clearInterval(autoId); voltarPara='scrResult'; rankRender(); show('scrRank'); });
+$('btnRankBack').addEventListener('click',function(){ if(voltarPara==='scrResult'){ voltarMenu(); } else { show(voltarPara); } });
+$('btnDeNovo').addEventListener('click',voltarMenu);
+$('btnAbort').addEventListener('click',function(){ if(S) fimDeJogo(false); });
+
+if (tem3D){
+  if (scene.hasLoaded) ligarCliques(); else scene.addEventListener('loaded', ligarCliques);
+} else {
+  window.__gaguaErro('O motor 3D não carregou. Verifique a internet e recarregue a página.');
+}
+})();
+</script>
+
+</body>
+</html>

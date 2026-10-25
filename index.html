@@ -483,7 +483,8 @@ if (window.AFRAME) {
       <a-torus radius="0.18" radius-tubular="0.016" color="#FFD34D" material="shader: flat"
         animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
-    <a-plane position="-1.6 1.62 -0.1" width="1.5" height="0.28" ctext="text: Escovando? Feche!; size: 38; color: #0E3A57; bg: #FFFFFF; w: 600; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-cylinder position="-1.28 1.08 -0.12" radius="0.045" height="0.12" color="#2FA8DD" open-ended="true" material="side: double"></a-cylinder>
+    <a-plane position="-1.55 1.68 -0.08" width="1.9" height="0.3" ctext="text: Escove com a torneira FECHADA!; size: 36; color: #0E3A57; bg: #FFFFFF; w: 760; h: 120" material="shader: flat; transparent: true"></a-plane>
     <a-entity id="ok_banheiro" visible="false"><a-circle position="0.6 2.85 -0.6" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0.6 2.85 -0.58" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
     <a-entity id="ok_pia" visible="false"><a-circle position="-0.6 2.85 -0.6" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="-0.6 2.85 -0.58" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
@@ -630,30 +631,7 @@ if (window.AFRAME) {
         animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
     <a-plane position="-1.35 0.7 0.95" width="1.7" height="0.3" ctext="text: Conserte a bóia!; size: 40; color: #0E3A57; bg: #FFFFFF; w: 680; h: 120" material="shader: flat; transparent: true"></a-plane>
-    <!-- CALÇADA (nova missão): vassoura vs mangueira -->
-    <a-entity id="agua_calcada" position="1.7 0 0.9">
-      <a-circle rotation="-90 0 0" position="0 0.03 0" radius="0.5" color="#8FD9FF" material="opacity:.5;transparent:true"></a-circle>
-      <a-sphere radius="0.04" color="#D4F0FF" position="-0.3 0.4 0" animation="property: position; from: -0.3 0.4 0; to: 0.3 0.05 0.2; dur: 600; loop: true; easing: linear"></a-sphere>
-    </a-entity>
-    <a-entity id="alvo_calcada_bom" class="clickable" position="1.35 0.1 1.75">
-      <a-sphere radius="0.5" position="0 0.3 0" material="opacity: 0; transparent: true"></a-sphere>
-      <a-cylinder radius="0.028" height="1.1" position="0 0.6 0" rotation="12 0 8" color="#B98E55"></a-cylinder>
-      <a-box width="0.22" height="0.14" depth="0.08" position="0.11 0.08 0.02" rotation="12 0 8" color="#D9A520"></a-box>
-      <a-torus radius="0.3" radius-tubular="0.02" rotation="90 0 0" position="0 0.03 0" color="#FFD34D" material="shader: flat"
-        animation="property: scale; from: 1 1 1; to: 1.3 1.3 1.3; dir: alternate; dur: 700; loop: true"></a-torus>
-    </a-entity>
-    <a-plane position="1.35 1.35 1.75" width="1.2" height="0.28" ctext="text: Vassoura; size: 44; color: #0E3A57; bg: #FFFFFF; w: 480; h: 112" material="shader: flat; transparent: true"></a-plane>
-    <a-entity id="alvo_calcada_mau" class="clickable" position="2 0.08 0.1">
-      <a-sphere radius="0.45" position="0 0.15 0" material="opacity: 0; transparent: true"></a-sphere>
-      <a-torus radius="0.2" radius-tubular="0.05" rotation="90 0 0" position="0 0.08 0" color="#2E7D32"></a-torus>
-      <a-torus radius="0.13" radius-tubular="0.045" rotation="90 0 0" position="0 0.14 0" color="#35903B"></a-torus>
-      <a-cylinder radius="0.045" height="0.42" position="0 0.22 0.16" rotation="60 0 0" color="#2E7D32"></a-cylinder>
-      <a-cylinder radius="0.055" height="0.1" position="0 0.38 0.28" rotation="60 0 0" color="#F2C53D"></a-cylinder>
-    </a-entity>
-    <a-plane position="2 0.9 0.1" width="1.3" height="0.28" ctext="text: Mangueira; size: 44; color: #0E3A57; bg: #FFFFFF; w: 520; h: 112" material="shader: flat; transparent: true"></a-plane>
-    <a-plane position="1.5 2.1 0.6" width="2.4" height="0.4" look-at-cam ctext="text: Como limpar a calçada?; size: 42; color: #10273D; bg: #FFFFFF; w: 860; h: 104" material="shader: flat; transparent: true"></a-plane>
     <a-entity id="ok_caixa" visible="false"><a-circle position="-0.6 3.1 1.1" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="-0.6 3.1 1.12" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
-    <a-entity id="ok_calcada" visible="false"><a-circle position="1.7 2.6 0.9" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="1.7 2.6 0.92" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
 
   <!-- GARAGEM -->
@@ -794,7 +772,7 @@ if (window.AFRAME) {
 
 <!-- HUD 2D -->
 <div id="hud2d"><div class="bar">
-  <span>⏱ <b id="h2time">0:00</b></span><span>✔ <b id="h2done">0/10</b></span><span>⭐ <b id="h2pts">0</b></span>
+  <span>⭐ <b id="h2pts">0</b></span><span>💧 <b id="h2agua">0 L</b></span><span>✔ <b id="h2done">0/9</b></span><span>⏱ <b id="h2time">0:00</b></span>
   <button id="btnMusic" type="button" style="background:#2FA8DD">🎸</button>
   <button id="btnAbort" type="button">ENCERRAR</button>
 </div></div>
@@ -812,7 +790,7 @@ if (window.AFRAME) {
     <img class="logo" src="logo_adventista.jpeg" alt="Logo Educação Adventista">
     <div class="tag">Feira de Ciências · 7ª série</div>
     <h1>GUARDIÕES <span class="agua">DA ÁGUA</span> VR</h1>
-    <p class="sub">Corrida contra o desperdício: resolva <b id="menuMiss">10</b> missões no menor tempo!</p>
+    <p class="sub">Resolva <b id="menuMiss">9</b> desperdícios, ganhe pontos e veja <b>quantos litros</b> cada ação economiza!</p>
     <input type="text" id="inpNome" maxlength="16" placeholder="Seu nome ou apelido" autocomplete="off">
     <button class="btn btn-vr" id="btnMenuVR" type="button">🥽 INICIAR MISSÃO EM VR</button>
     <button class="btn btn-2d" id="btnMenu2D" type="button">📱 INICIAR NO MODO 2D</button>
@@ -845,7 +823,7 @@ if (window.AFRAME) {
     <div class="tag">Tutorial rápido</div>
     <h1>Como jogar</h1>
     <div class="tut">
-      <div><span class="n">1</span><p><b>Corrida contra o relógio:</b> complete <b id="tutMiss">10</b> missões no menor tempo. Erro: <b>+<span id="tutPen">5</span>s</b> no cronômetro!</p></div>
+      <div><span class="n">1</span><p><b>Cada ação consciente vale pontos</b> e mostra os <b>litros de água economizados</b>. Complete as <b id="tutMiss">9</b> missões! Erro: <b>−20 pts</b><span id="tutPen" hidden></span>.</p></div>
       <div><span class="n">2</span><p><b>Siga a seta dourada</b> — ela mostra o próximo desperdício. O objeto certo tem <b>anel dourado</b>.</p></div>
       <div><span class="n">3</span><p><b>No VR:</b> analógico esquerdo anda, direito gira; <b>gatilho ou botão A</b> aciona. No 2D: clique.</p></div>
       <div><span class="n">4</span><p><b>Círculos azuis</b> no chão teletransportam até cada cômodo.</p></div>
@@ -871,8 +849,8 @@ if (window.AFRAME) {
   <div class="screen" id="scrRank" hidden>
     <img class="logo" src="logo_adventista.jpeg" alt="Logo Educação Adventista">
     <div class="tag">Feira de Ciências · Educação Adventista</div>
-    <h1>🏆 Ranking — mais rápidos</h1>
-    <p class="hint" style="margin-top:0">Vence quem completar mais missões no menor tempo.</p>
+    <h1>🏆 Ranking — Guardiões</h1>
+    <p class="hint" style="margin-top:0">Mais pontos vence; empate decidido pelo menor tempo.</p>
     <ol class="rank" id="rankList"></ol>
     <p class="empty" id="rankEmpty" hidden>Ainda não há tempos registrados. Seja o primeiro Guardião!</p>
     <button class="btn btn-vr" id="btnRankBack" type="button">VOLTAR</button>
@@ -892,14 +870,15 @@ setTimeout(function(){
 (function(){
 'use strict';
 /* ================== MISSÕES ================== */
-var CHAVES = ['banheiro','pia','cozinha','filtro','jardim','caixa','calcada','garagem','servico','maquina'];
-var PONTOS = { banheiro:100, pia:100, cozinha:100, filtro:100, jardim:150, caixa:150, calcada:150, garagem:150, servico:200, maquina:150 };
-var LITROS = { banheiro:45, pia:20, cozinha:30, filtro:15, jardim:50, caixa:120, calcada:60, garagem:80, servico:100, maquina:40 };
-var NOMES = { banheiro:'o chuveiro do Banheiro', pia:'a pia do Banheiro', cozinha:'a torneira da Cozinha', filtro:'o filtro da Cozinha', jardim:'o Jardim', caixa:'a Caixa d’Água', calcada:'a calçada do Quintal', garagem:'a Garagem', servico:'o cano da Área de Serviço', maquina:'a máquina de lavar' };
-var ROTULOS = { banheiro:'Chuveiro (banheiro)', pia:'Escovação (pia)', cozinha:'Torneira (cozinha)', filtro:'Filtro pingando', jardim:'Regador × mangueira', caixa:'Bóia da caixa', calcada:'Calçada: vassoura', garagem:'Carro: balde', servico:'Cano vazando', maquina:'Máquina cheia' };
-var MISSAO = { banheiro:'Feche o registro\ndo chuveiro ligado!', pia:'Escovando os dentes?\nFeche a torneira da pia!', cozinha:'Feche a torneira\nda pia da cozinha!', filtro:'O filtro está pingando!\nFeche o registro dele!', jardim:'Escolha o melhor jeito\nde regar as plantas!', caixa:'A caixa está transbordando!\nConserte a bóia!', calcada:'Como limpar a calçada\nsem desperdiçar?', garagem:'Escolha o melhor jeito\nde lavar o carro!', servico:'Ache e conserte\no cano vazando!', maquina:'Lave roupa só com\na máquina CHEIA!' };
-var SETA_POS = { banheiro:'-6.4 4 -4.4', pia:'-6.4 4 -4.4', cozinha:'0 4 -7.6', filtro:'0 4 -7.6', jardim:'6.4 4 -4.4', caixa:'8.6 4.4 0.6', calcada:'8.6 4.4 0.6', garagem:'5.4 4 4.2', servico:'-5.4 4 4.2', maquina:'-5.4 4 4.2' };
-var GRUPO = { banheiro:['banheiro','pia'], cozinha:['cozinha','filtro'], jardim:['jardim'], caixa:['caixa','calcada'], garagem:['garagem'], servico:['servico','maquina'] };
+var CHAVES = ['banheiro','pia','cozinha','filtro','jardim','caixa','garagem','servico','maquina'];
+var PONTOS = { banheiro:100, pia:100, cozinha:100, filtro:100, jardim:150, caixa:150, garagem:150, servico:200, maquina:150 };
+var LITROS = { banheiro:45, pia:20, cozinha:30, filtro:15, jardim:50, caixa:120, garagem:80, servico:100, maquina:40 };
+var NOMES = { banheiro:'o chuveiro do Banheiro', pia:'a pia do Banheiro', cozinha:'a torneira da Cozinha', filtro:'o filtro da Cozinha', jardim:'o Jardim', caixa:'a Caixa d’Água', garagem:'a Garagem', servico:'o cano da Área de Serviço', maquina:'a máquina de lavar' };
+var ROTULOS = { banheiro:'Chuveiro (banheiro)', pia:'Escovação: torneira', cozinha:'Torneira (cozinha)', filtro:'Filtro pingando', jardim:'Regador × mangueira', caixa:'Bóia da caixa', garagem:'Carro: balde', servico:'Cano vazando', maquina:'Máquina cheia' };
+var MISSAO = { banheiro:'Feche o registro\ndo chuveiro ligado!', pia:'Escovando os dentes?\nFeche a torneira da pia!', cozinha:'Feche a torneira\nda pia da cozinha!', filtro:'O filtro está pingando!\nFeche o registro dele!', jardim:'Escolha o melhor jeito\nde regar as plantas!', caixa:'A caixa está transbordando!\nConserte a bóia!', garagem:'Escolha o melhor jeito\nde lavar o carro!', servico:'Ache e conserte\no cano vazando!', maquina:'Lave roupa só com\na máquina CHEIA!' };
+var SETA_POS = { banheiro:'-6.4 4 -4.4', pia:'-6.4 4 -4.4', cozinha:'0 4 -7.6', filtro:'0 4 -7.6', jardim:'6.4 4 -4.4', caixa:'8.6 4.4 0.6', garagem:'5.4 4 4.2', servico:'-5.4 4 4.2', maquina:'-5.4 4 4.2' };
+var GRUPO = { banheiro:['banheiro','pia'], cozinha:['cozinha','filtro'], jardim:['jardim'], caixa:['caixa'], garagem:['garagem'], servico:['servico','maquina'] };
+function maxPontos(){ var s=0; ativasLista().forEach(function(k){ s+=PONTOS[k]; }); return s; }
 var FRASES = {
   banheiro:'Isso! Fechar o chuveiro ao se ensaboar\neconomiza até 45 litros!',
   pia:'Muito bem! Escovar os dentes com a\ntorneira fechada poupa 20 litros!',
@@ -907,7 +886,6 @@ var FRASES = {
   filtro:'Filtro consertado! Gotinhas somam\nmuitos litros por dia!',
   jardim:'Ótima escolha! O regador usa muito\nmenos água que a mangueira!',
   caixa:'Bóia consertada! Uma caixa transbordando\ndesperdiça centenas de litros!',
-  calcada:'Isso! Vassoura na calçada economiza\ncentenas de litros!',
   garagem:'Perfeito! Lavar o carro com balde\neconomiza até 80 litros!',
   servico:'Vazamento consertado! Um cano furado\ndesperdiça mais de 100 litros por dia!',
   maquina:'Exato! Máquina cheia lava mais\nroupa com a mesma água!'
@@ -1101,12 +1079,12 @@ function falar(txt){
 }
 
 /* ================== RANKING por tempo ================== */
-function rankLoad(){ try{ return JSON.parse(localStorage.getItem('gagua_rank_t')||'[]'); }catch(e){ return []; } }
-function rankSave(nome, feitos, total, tempo, pts){
+function rankLoad(){ try{ return JSON.parse(localStorage.getItem('gagua_rank_p')||'[]'); }catch(e){ return []; } }
+function rankSave(nome, feitos, total, tempo, pts, litros){
   try{
-    var r=rankLoad(); r.push({n:nome,m:feitos,mt:total,t:tempo,s:pts});
-    r.sort(function(a,b){ return (b.m-a.m) || (a.t-b.t); });
-    localStorage.setItem('gagua_rank_t', JSON.stringify(r.slice(0,10)));
+    var r=rankLoad(); r.push({n:nome,m:feitos,mt:total,t:tempo,s:pts,l:litros});
+    r.sort(function(a,b){ return (b.s-a.s) || (a.t-b.t); });
+    localStorage.setItem('gagua_rank_p', JSON.stringify(r.slice(0,10)));
   }catch(e){}
 }
 function rankRender(){
@@ -1115,7 +1093,7 @@ function rankRender(){
   r.forEach(function(e,i){
     var li=document.createElement('li');
     var medal = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)+'º'));
-    li.innerHTML='<span class="pos">'+medal+'</span><span class="nm"></span><span class="sc">'+fmt(e.t)+'<small>'+e.m+'/'+(e.mt||e.m)+' missões</small></span>';
+    li.innerHTML='<span class="pos">'+medal+'</span><span class="nm"></span><span class="sc">'+e.s+' pts<small>💧 '+(e.l||0)+' L · '+fmt(e.t)+'</small></span>';
     li.querySelector('.nm').textContent=e.n;
     ul.appendChild(li);
   });
@@ -1137,8 +1115,9 @@ function fmt(t){ var m=Math.floor(t/60), s=t%60; return m+':'+(s<10?'0':'')+s; }
 function hud(){
   if(!S) return;
   var n=S.total;
-  setCtext('hudvr','⏱ '+fmt(S.t)+'    ✔ '+S.feitos+'/'+n+'    ⭐ '+S.pts);
+  setCtext('hudvr','⭐ '+S.pts+'    💧 '+S.litros+' L    ✔ '+S.feitos+'/'+n+'    ⏱ '+fmt(S.t));
   $('h2time').textContent=fmt(S.t); $('h2pts').textContent=S.pts; $('h2done').textContent=S.feitos+'/'+n;
+  $('h2agua').textContent=S.litros+' L';
 }
 function proximoDesafio(){
   if(!S) return null;
@@ -1181,7 +1160,8 @@ function acerto(key, alvoEl){
   setVis('agua_'+key,false); setVis('ok_'+key,true);
   if(alvoEl) alvoEl.setAttribute('visible','false');
   somAcerto(); aguaVolume(); atualizaSeta();
-  popup(alvoEl, '+'+PONTOS[key], '#2E9E5B');
+  popup(alvoEl, '+'+PONTOS[key]+' pts', '#2E9E5B');
+  setTimeout(function(){ popup(alvoEl, '💧 +'+LITROS[key]+' litros!', '#0E6FA3'); }, 450);
   var prox=proximoDesafio();
   balao(FRASES[key] + (prox ? '\nAgora: '+NOMES[prox]+'!' : ''));
   hud();
@@ -1190,8 +1170,9 @@ function acerto(key, alvoEl){
 function erro(key, alvoEl){
   if(!S || !CFG.ativas[key] || S.done[key]) return;
   S.erros++;
-  if(CFG.pen>0){ S.t+=CFG.pen; popup(alvoEl,'+'+CFG.pen+'s','#C94F3D'); }
-  else popup(alvoEl,'✗','#C94F3D');
+  S.pts=Math.max(0,S.pts-20);
+  popup(alvoEl,'-20 pts','#C94F3D');
+  if(CFG.pen>0) S.t+=CFG.pen;
   somErro();
   balao('Ops! Assim gasta muita água.\nClique na opção com anel dourado!');
   hud();
@@ -1207,8 +1188,6 @@ var ACOES = {
   alvo_jardim_mau: function(el){ erro('jardim',el); },
   alvo_garagem_bom: function(el){ acerto('garagem',el); },
   alvo_garagem_mau: function(el){ erro('garagem',el); },
-  alvo_calcada_bom: function(el){ acerto('calcada',el); },
-  alvo_calcada_mau: function(el){ erro('calcada',el); },
   alvo_maquina_bom: function(el){ acerto('maquina',el); },
   alvo_maquina_mau: function(el){ erro('maquina',el); }
 };
@@ -1351,7 +1330,7 @@ function ligarCliques(){ ligarCliquesVR(); ligarCliques2D(); }
 function resetCena(){
   if(!tem3D) return;
   CHAVES.forEach(function(k){ setVis('agua_'+k,true); setVis('ok_'+k,false); });
-  ['alvo_banheiro','alvo_pia','alvo_cozinha','alvo_filtro','alvo_servico','alvo_caixa','alvo_jardim_bom','alvo_garagem_bom','alvo_calcada_bom','alvo_maquina_bom'].forEach(function(id){ setVis(id,true); });
+  ['alvo_banheiro','alvo_pia','alvo_cozinha','alvo_filtro','alvo_servico','alvo_caixa','alvo_jardim_bom','alvo_garagem_bom','alvo_maquina_bom'].forEach(function(id){ setVis(id,true); });
   /* missões desativadas: esconde água e alvo */
   CHAVES.forEach(function(k){
     if(!CFG.ativas[k]){
@@ -1387,11 +1366,13 @@ function comecar(vr){
     if(resta<=0) fimDeJogo(false);
   },1000);
 }
-function classif(completou, tempo){
-  if(!completou) return 'Aprendiz da Água';
-  if(tempo<=90) return 'Mestre da Água';
-  if(tempo<=140) return 'Guardião da Água';
-  return 'Protetor da Água';
+function classif(pts){
+  var max=maxPontos()||1;
+  var p=pts/max;
+  if(p>=0.85) return 'Mestre da Água';
+  if(p>=0.6) return 'Guardião da Água';
+  if(p>=0.3) return 'Protetor da Água';
+  return 'Aprendiz da Água';
 }
 function medalhas(completou){
   var m=[];
@@ -1411,20 +1392,20 @@ function fimDeJogo(completou){
   if(AC&&aguaGain){ try{ aguaGain.gain.linearRampToValueAtTime(0,AC.currentTime+0.5); }catch(e){} }
   somFanfarra();
   var nome=($('inpNome').value||'Guardião').trim()||'Guardião';
-  rankSave(nome, S.feitos, S.total, S.t, S.pts);
-  var cls=classif(completou, S.t);
-  if(completou) falar('Parabéns, '+nome+'! Todas as missões em '+fmt(S.t).replace(':',' minutos e ')+' segundos!');
-  else falar('Tempo esgotado, '+nome+'! Você completou '+S.feitos+' missões.');
-  setCtext('painelfinal', (completou?'MISSÃO CONCLUÍDA!':'TEMPO ESGOTADO!')+'\n\n'+nome+'\n⏱ '+fmt(S.t)+'\n✔ '+S.feitos+'/'+S.total+' missões\n⭐ '+S.pts+' pontos');
+  rankSave(nome, S.feitos, S.total, S.t, S.pts, S.litros);
+  var cls=classif(S.pts);
+  if(completou) falar('Parabéns, '+nome+'! '+S.pts+' pontos e '+S.litros+' litros de água economizados!');
+  else falar('Tempo esgotado, '+nome+'! Você fez '+S.pts+' pontos e economizou '+S.litros+' litros.');
+  setCtext('painelfinal', (completou?'MISSÃO CONCLUÍDA!':'TEMPO ESGOTADO!')+'\n\n'+nome+'\n⭐ '+S.pts+' pontos\n💧 '+S.litros+' litros economizados\n✔ '+S.feitos+'/'+S.total+' · ⏱ '+fmt(S.t));
   setVis('painelfinal',true); setVis('seta',false);
   setTimeout(function(){
     try{ if(scene && scene.is && scene.is('vr-mode')) scene.exitVR(); }catch(e){}
     $('hud2d').style.display='none';
     $('resNome').textContent=nome+' · 7ª série';
-    $('resTempo').textContent='⏱ '+fmt(S.t);
+    $('resTempo').textContent='⭐ '+S.pts;
     $('resClass').textContent=cls;
-    $('resMiss').textContent='✔ '+S.feitos+'/'+S.total+' missões · ⭐ '+S.pts+' pontos';
-    $('resAgua').textContent='💧 '+S.litros+' litros de água preservados*';
+    $('resMiss').textContent='✔ '+S.feitos+'/'+S.total+' missões · ⏱ '+fmt(S.t);
+    $('resAgua').textContent='💧 Você economizou '+S.litros+' litros de água!*';
     var md=$('resMedals'); md.innerHTML='';
     medalhas(completou).forEach(function(t){ var s=document.createElement('span'); s.className='medal'; s.textContent=t; md.appendChild(s); });
     $('resDica').textContent=DICAS[Math.floor(Math.random()*DICAS.length)];

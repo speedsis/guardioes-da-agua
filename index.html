@@ -21,6 +21,8 @@ html,body{height:100%;}
 body{background:var(--navy);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;overflow:hidden;}
 #scene-wrap{position:fixed;inset:0;}
 #scene-wrap canvas{display:block;}
+a-assets,a-assets img{display:none!important;}
+a-scene:not(.a-loaded){visibility:hidden;}
 #ui{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   padding-block:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-bottom,0px));}
@@ -87,7 +89,9 @@ window.addEventListener('error', function(e){
 });
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.6.0/aframe.min.js"></script>
+<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+<script>if(!window.AFRAME)document.write('<script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-v1.6.0.min.js"><\/script>')</script>
+<script>if(!window.AFRAME)document.write('<script src="https://unpkg.com/aframe@1.6.0/dist/aframe-v1.6.0.min.js"><\/script>')</script>
 
 <script>
 /* ===== componentes registrados ANTES da cena existir ===== */

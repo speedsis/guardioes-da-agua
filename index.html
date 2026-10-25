@@ -216,9 +216,49 @@ if (window.AFRAME) {
         var d=Math.hypot(p.x,p.z);
         if(d>11){ p.x*=11/d; p.z*=11/d; }
       } else {
-        if(Math.abs(this.ax)>0.7 && t-this.lastSnap>350){
+        /* giro fino: 5° a cada passo enquanto o analógico estiver inclinado */
+        if(Math.abs(this.ax)>0.4 && t-this.lastSnap>110){
           this.lastSnap=t;
-          rig.object3D.rotation.y -= Math.sign(this.ax)*Math.PI/4;
+          rig.object3D.rotation.y -= Math.sign(this.ax)*Math.PI/36;
+        }
+      }
+    }
+  });
+
+  /* colisão: não atravessar móveis/estruturas, com sensação de impacto */
+  AFRAME.registerComponent('colisor', {
+    init: function(){
+      /* círculos de colisão [x, z, raio] ao redor de cada estrutura */
+      this.cols=[
+        [-6.4,-4.4,1.7],  /* banheiro */
+        [0,-7.6,1.7],     /* cozinha */
+        [6.4,-4.4,1.25],  /* canteiro do jardim */
+        [8.6,0.6,1.7],    /* caixa d'água */
+        [5.4,4.2,1.8],    /* garagem */
+        [-5.4,4.2,1.8],   /* área de serviço */
+        [-11,-11,0.7],[11,-11,0.7],[-12,6,0.7], /* árvores */
+        [-1.6,5.5,0.3],[1.6,5.5,0.3],           /* pórtico */
+        [0,-2.6,0.55]     /* mascote */
+      ];
+      this.v=new THREE.Vector3(); this.lastThud=0;
+    },
+    tick: function(t){
+      var rig=document.getElementById('rig'), cam=document.getElementById('cam');
+      if(!rig||!cam) return;
+      cam.object3D.getWorldPosition(this.v);
+      var x=this.v.x, z=this.v.z, px=0, pz=0, bateu=false;
+      for(var i=0;i<this.cols.length;i++){
+        var c=this.cols[i], dx=x-c[0], dz=z-c[1], d=Math.hypot(dx,dz);
+        if(d<c[2] && d>0.0001){ var f=(c[2]-d)/d; px+=dx*f; pz+=dz*f; bateu=true; }
+      }
+      var db=Math.hypot(x,z);
+      if(db>11){ px+=x*(11/db-1); pz+=z*(11/db-1); bateu=true; }
+      if(bateu){
+        rig.object3D.position.x+=px;
+        rig.object3D.position.z+=pz;
+        if(t-this.lastThud>450 && (Math.abs(px)+Math.abs(pz))>0.015){
+          this.lastThud=t;
+          if(window.__thud) window.__thud();
         }
       }
     }
@@ -236,7 +276,7 @@ if (window.AFRAME) {
 </head>
 <body>
 <div id="scene-wrap">
-<a-scene id="cena" vr-mode-ui="enabled: false" renderer="antialias: true; colorManagement: true"
+<a-scene id="cena" vr-mode-ui="enabled: false" renderer="antialias: true; colorManagement: true" colisor
   fog="type: linear; color: #C9E6F5; near: 20; far: 46" background="color: #9FD4F5">
   <a-assets timeout="4000">
     <img id="logoimg" src="logo_adventista.jpeg" crossorigin="anonymous">
@@ -324,8 +364,11 @@ if (window.AFRAME) {
     <a-cylinder position="-1.5 0.99 -0.25" radius="0.2" height="0.06" color="#E8F0F4"></a-cylinder>
     <a-plane position="-1.5 1.85 -0.68" width="0.7" height="0.9" color="#CDE6F0" material="metalness:.4;roughness:.15"></a-plane>
     <a-box position="-1.5 1.85 -0.69" width="0.78" height="0.98" depth="0.02" color="#9FB8C4"></a-box>
-    <!-- toalha -->
+    <!-- toalha / rodapé / tapete -->
     <a-plane position="2.28 1.5 0.5" rotation="0 -90 0" width="0.5" height="0.7" color="#F2C53D"></a-plane>
+    <a-box position="0 0.06 -0.68" width="4.6" height="0.12" depth="0.05" color="#9FB8C4"></a-box>
+    <a-circle rotation="-90 0 0" position="-0.9 0.02 0.9" radius="0.5" color="#7EC8E3"></a-circle>
+    <a-torus rotation="-90 0 0" position="-0.9 0.025 0.9" radius="0.5" radius-tubular="0.03" color="#5BA8C4"></a-torus>
     <!-- água do chuveiro -->
     <a-entity id="agua_banheiro">
       <a-cone position="0.75 1.2 0.42" radius-top="0.05" radius-bottom="0.22" height="1.75" color="#8FD9FF" material="opacity:.5;transparent:true"></a-cone>
@@ -372,6 +415,12 @@ if (window.AFRAME) {
     <a-cylinder position="0.5 1.28 -0.15" radius="0.14" height="0.05" color="#E86BA0"></a-cylinder>
     <a-cylinder position="0.65 1.33 -0.15" radius="0.14" height="0.05" color="#8E6BE8"></a-cylinder>
     <a-cylinder position="0.57 1.26 0.05" radius="0.08" height="0.14" color="#2E86C1"></a-cylinder>
+    <!-- rodapé + relógio de parede -->
+    <a-box position="0 0.06 -0.68" width="4.6" height="0.12" depth="0.05" color="#A87C46"></a-box>
+    <a-circle position="1.4 2.5 -0.68" radius="0.3" color="#FFFFFF"></a-circle>
+    <a-torus position="1.4 2.5 -0.67" radius="0.3" radius-tubular="0.03" color="#133B63"></a-torus>
+    <a-box position="1.4 2.56 -0.66" width="0.04" height="0.16" depth="0.015" rotation="0 0 25" color="#133B63"></a-box>
+    <a-box position="1.45 2.5 -0.66" width="0.12" height="0.035" depth="0.015" color="#E24B3B"></a-box>
     <a-entity id="agua_cozinha">
       <a-cylinder position="-0.09 1.38 -0.3" radius="0.045" height="0.42" color="#8FD9FF" material="opacity:.6;transparent:true"></a-cylinder>
       <a-sphere radius="0.045" color="#D4F0FF" position="-0.09 1.55 -0.3" animation="property: position; from: -0.09 1.55 -0.3; to: -0.09 1.25 -0.3; dur: 520; loop: true; easing: linear"></a-sphere>
@@ -511,7 +560,8 @@ if (window.AFRAME) {
       <a-sphere radius="0.14" scale="1 0.7 1" position="-0.4 0.68 0.4" color="#FFFFFF" material="opacity:.5;transparent:true"></a-sphere>
       <a-sphere radius="0.1" scale="1 0.7 1" position="0.3 0.6 0.45" color="#FFFFFF" material="opacity:.45;transparent:true"></a-sphere>
     </a-entity>
-    <!-- prateleira de garagem -->
+    <!-- rodapé + prateleira de garagem -->
+    <a-box position="0 0.06 -0.68" width="4.6" height="0.12" depth="0.05" color="#7E8791"></a-box>
     <a-box position="-1.9 1.3 -0.4" width="0.7" height="0.06" depth="0.4" color="#B98E55"></a-box>
     <a-cylinder position="-2.05 1.42 -0.4" radius="0.08" height="0.18" color="#F2C53D"></a-cylinder>
     <a-box position="-1.75 1.4 -0.4" width="0.14" height="0.14" depth="0.14" color="#2E86C1"></a-box>
@@ -550,6 +600,10 @@ if (window.AFRAME) {
     <a-plane position="2.3 1.6 0.9" rotation="0 -90 0" width="3.2" height="3.2" ptex="kind: brick; rx: 3; ry: 3" color="#EDEAF4"></a-plane>
     <a-box position="0 3.3 -0.7" width="4.7" height="0.22" depth="0.3" color="#6E4E8E"></a-box>
     <a-plane position="0 3.62 -0.68" width="3.4" height="0.5" ctext="text: 🔧 ÁREA DE SERVIÇO; size: 46; color: #FFFFFF; bg: #6E4E8E; w: 760; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <!-- rodapé + quadro -->
+    <a-box position="0 0.06 -0.68" width="4.6" height="0.12" depth="0.05" color="#8E7BA8"></a-box>
+    <a-plane position="-1.5 2.4 -0.68" width="0.7" height="0.5" color="#D9A520"></a-plane>
+    <a-plane position="-1.5 2.4 -0.67" width="0.6" height="0.4" ctext="text: 💧 ECONOMIZE!; size: 44; color: #133B63; bg: #EAF6FF; w: 420; h: 280" material="shader: flat; transparent: true"></a-plane>
     <!-- máquina de lavar -->
     <a-box position="1.5 0.55 -0.1" width="0.85" height="1.1" depth="0.8" color="#F2F5F8"></a-box>
     <a-circle position="1.5 0.62 0.31" radius="0.26" color="#5B6670"></a-circle>
@@ -760,13 +814,14 @@ function nota(freq,t0,dur,tipo,vol){
     o.start(AC.currentTime+t0); o.stop(AC.currentTime+t0+dur+0.05);
   }catch(e){}
 }
-/* ===== trilha rock sintetizada (bateria + baixo + power chords) ===== */
-var rockBuf=null, rockSrc=null, rockGain=null, rockOn=true;
-function makeRock(){
-  if(!AC || rockBuf!==null) return;
-  rockBuf=false;
+/* ===== trilhas sintetizadas: rock (normal) e tensa (reta final) ===== */
+var BUFS={}, rockSrc=null, rockGain=null, rockOn=true, trilhaAtual='rock';
+function makeLoop(kind){
+  if(!AC || BUFS[kind]!==undefined) return;
+  BUFS[kind]=false;
   try{
-    var bpm=132, spb=60/bpm, dur=spb*16, SR=44100;
+    var tensa=(kind==='tensa');
+    var bpm=tensa?168:132, spb=60/bpm, dur=spb*16, SR=44100;
     var off=new OfflineAudioContext(1, Math.ceil(SR*dur), SR);
     var master=off.createGain(); master.gain.value=0.9; master.connect(off.destination);
     var ws=off.createWaveShaper();
@@ -786,54 +841,72 @@ function makeRock(){
       var g=off.createGain(); g.gain.value=vol;
       s.connect(f); f.connect(g); g.connect(master); s.start(t);
     }
-    var prog=[82.41,82.41,98,110]; /* E E G A */
+    var prog=tensa?[82.41,87.31,98,103.83]:[82.41,82.41,98,110]; /* tensa: E F G G# */
     for(var bar=0;bar<4;bar++){
       var root=prog[bar];
-      for(var e8=0;e8<8;e8++){
-        var t=bar*4*spb+e8*spb/2;
-        osc('sawtooth',root,t,0.14,0.2,ws);
-        osc('sawtooth',root*1.5,t,0.14,0.16,ws);
-        osc('sawtooth',root*2,t,0.14,0.1,ws);
-        noiseHit(t,0.04,0.1,true);
+      var sub=tensa?16:8; /* tensa: chimbal em semicolcheias */
+      for(var e8=0;e8<sub;e8++){
+        var t=bar*4*spb+e8*(4*spb/sub);
+        if(!tensa || e8%2===0){
+          osc('sawtooth',root,t,tensa?0.1:0.14,0.2,ws);
+          osc('sawtooth',root*1.5,t,tensa?0.1:0.14,0.16,ws);
+          osc('sawtooth',root*2,t,tensa?0.1:0.14,0.1,ws);
+        }
+        noiseHit(t,0.035,tensa?0.13:0.1,true);
       }
       for(var beat=0;beat<4;beat++){
         var tb=bar*4*spb+beat*spb;
-        if(beat%2===0){
+        if(tensa || beat%2===0){
           (function(tb){
             var o=off.createOscillator(),g=off.createGain();
             o.type='sine'; o.frequency.setValueAtTime(130,tb); o.frequency.exponentialRampToValueAtTime(45,tb+0.1);
             g.gain.setValueAtTime(0.9,tb); g.gain.exponentialRampToValueAtTime(0.001,tb+0.16);
             o.connect(g); g.connect(master); o.start(tb); o.stop(tb+0.18);
           })(tb);
-        } else {
+        }
+        if(beat%2===1){
           noiseHit(tb,0.12,0.32,false);
           osc('triangle',190,tb,0.08,0.18);
         }
-        osc('square',root,tb,0.3,0.16);
+        osc('square',root,tb,tensa?0.2:0.3,0.16);
+        if(tensa) osc('square',root,tb+spb/2,0.15,0.13);
       }
     }
-    off.startRendering().then(function(buf){ rockBuf=buf; });
-  }catch(e){ rockBuf=null; }
+    off.startRendering().then(function(buf){ BUFS[kind]=buf; });
+  }catch(e){ BUFS[kind]=null; }
 }
-function musicStart(){
+function musicStart(kind){
+  kind=kind||'rock';
   if(!AC||!rockOn) return;
+  trilhaAtual=kind;
   function go(){
-    if(!rockBuf||rockBuf===false||rockSrc) return;
-    rockSrc=AC.createBufferSource(); rockSrc.buffer=rockBuf; rockSrc.loop=true;
-    rockGain=AC.createGain(); rockGain.gain.value=0.09;
+    if(rockSrc||!BUFS[kind]||BUFS[kind]===false||trilhaAtual!==kind) return;
+    rockSrc=AC.createBufferSource(); rockSrc.buffer=BUFS[kind]; rockSrc.loop=true;
+    rockGain=AC.createGain(); rockGain.gain.value=(kind==='tensa')?0.13:0.09;
     rockSrc.connect(rockGain); rockGain.connect(AC.destination); rockSrc.start();
   }
-  if(rockBuf&&rockBuf!==false){ go(); return; }
-  makeRock();
+  if(BUFS[kind]&&BUFS[kind]!==false){ go(); return; }
+  makeLoop(kind);
   var h=setInterval(function(){
-    if(rockBuf&&rockBuf!==false){ clearInterval(h); if(S&&!S.fim&&rockOn) go(); }
-    else if(rockBuf===null){ clearInterval(h); }
+    if(BUFS[kind]&&BUFS[kind]!==false){ clearInterval(h); if(S&&!S.fim&&rockOn&&trilhaAtual===kind) go(); }
+    else if(BUFS[kind]===null){ clearInterval(h); }
   },300);
 }
 function musicStop(){
   try{ if(rockSrc){ rockSrc.stop(); rockSrc.disconnect(); } }catch(e){}
   rockSrc=null;
 }
+/* impacto de colisão: som grave + vibração nos controles */
+window.__thud=function(){
+  nota(70,0,0.15,'sine',0.28); nota(45,0,0.22,'triangle',0.22);
+  try{
+    Array.prototype.forEach.call(document.querySelectorAll('[laser-controls]'),function(h){
+      var tc=h.components['tracked-controls'];
+      var gp=tc&&tc.controller&&tc.controller.gamepad;
+      if(gp&&gp.hapticActuators&&gp.hapticActuators[0]) gp.hapticActuators[0].pulse(0.7,90);
+    });
+  }catch(e){}
+};
 
 function somAcerto(){ nota(660,0,0.18); nota(880,0.1,0.18); nota(1320,0.2,0.3); }
 function somErro(){ nota(140,0,0.3,'square',0.12); }
@@ -1064,11 +1137,12 @@ function comecar(vr){
       if(p && p.catch) p.catch(function(){ toast('VR não ativou aqui — jogando no modo 2D. No Quest, abra o link direto no Meta Quest Browser.'); });
     }catch(e){ toast('VR não ativou — jogando no modo 2D.'); }
   }
-  musicStart();
+  musicStart('rock'); makeLoop('tensa');
   balao('Atenção, Guardião! Siga a seta\ndourada. Você tem 3 minutos!');
   clearInterval(timerId);
   timerId=setInterval(function(){
     S.t--;
+    if(S.t===30 && !S.fim){ musicStop(); musicStart('tensa'); balao('Rápido, Guardião!\nSó 30 segundos!'); }
     if(S.t<=10 && S.t>0) somTick();
     hud();
     if(S.t<=0) fimDeJogo(false);
@@ -1145,7 +1219,7 @@ $('btnAbort').addEventListener('click',function(){ if(S) fimDeJogo(false); });
 $('btnMusic').addEventListener('click',function(){
   rockOn=!rockOn;
   this.textContent = rockOn ? '🎸' : '🔇';
-  if(!rockOn) musicStop(); else if(S && !S.fim) musicStart();
+  if(!rockOn) musicStop(); else if(S && !S.fim) musicStart(S.t<=30?'tensa':'rock');
 });
 
 if (tem3D){

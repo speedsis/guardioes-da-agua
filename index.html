@@ -190,6 +190,40 @@ if (window.AFRAME) {
     }
   });
 
+  /* locomoção VR: analógico esquerdo anda (relativo ao olhar), direito gira em saltos de 45° */
+  AFRAME.registerComponent('vr-move', {
+    schema: { hand: {default: 'left'} },
+    init: function(){
+      var self=this;
+      this.ax=0; this.ay=0; this.lastSnap=0;
+      this.el.addEventListener('thumbstickmoved', function(e){ self.ax=e.detail.x||0; self.ay=e.detail.y||0; });
+      this.fwd=new THREE.Vector3(); this.rightV=new THREE.Vector3(); this.up=new THREE.Vector3(0,1,0);
+    },
+    tick: function(t,dt){
+      var scene=this.el.sceneEl;
+      if(!dt || !scene.is('vr-mode')) return;
+      var rig=document.getElementById('rig'), cam=document.getElementById('cam');
+      if(!rig||!cam) return;
+      if(this.data.hand==='left'){
+        if(Math.abs(this.ax)<0.15 && Math.abs(this.ay)<0.15) return;
+        cam.object3D.getWorldDirection(this.fwd);
+        this.fwd.negate(); this.fwd.y=0; this.fwd.normalize();
+        this.rightV.crossVectors(this.fwd,this.up);
+        var sp=2.2*dt/1000;
+        var p=rig.object3D.position;
+        p.addScaledVector(this.fwd,-this.ay*sp);
+        p.addScaledVector(this.rightV,this.ax*sp);
+        var d=Math.hypot(p.x,p.z);
+        if(d>11){ p.x*=11/d; p.z*=11/d; }
+      } else {
+        if(Math.abs(this.ax)>0.7 && t-this.lastSnap>350){
+          this.lastSnap=t;
+          rig.object3D.rotation.y -= Math.sign(this.ax)*Math.PI/4;
+        }
+      }
+    }
+  });
+
   /* placas sempre viradas para o jogador */
   AFRAME.registerComponent('look-at-cam',{ tick:function(){
     var cam=document.getElementById('cam'); if(!cam) return;
@@ -570,8 +604,8 @@ if (window.AFRAME) {
       <a-plane id="painelfinal" visible="false" position="0 0 -1.7" width="2.3" height="1.5" material="shader: flat; transparent: true"
         ctext="text: ; size: 54; color: #10273D; bg: #F6F9FC; w: 1000; h: 650"></a-plane>
     </a-entity>
-    <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 25" line="color: #2FA8DD"></a-entity>
-    <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 25" line="color: #2FA8DD"></a-entity>
+    <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 25" line="color: #2FA8DD" vr-move="hand: left"></a-entity>
+    <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 25" line="color: #2FA8DD" vr-move="hand: right"></a-entity>
   </a-entity>
 </a-scene>
 </div>
@@ -579,6 +613,7 @@ if (window.AFRAME) {
 <!-- HUD 2D -->
 <div id="hud2d"><div class="bar">
   <span>⏱ <b id="h2time">3:00</b></span><span>⭐ <b id="h2pts">0</b></span><span>✔ <b id="h2done">0/6</b></span>
+  <button id="btnMusic" type="button" style="background:#2FA8DD">🎸</button>
   <button id="btnAbort" type="button">ENCERRAR</button>
 </div></div>
 
@@ -608,7 +643,7 @@ if (window.AFRAME) {
     <h1>Como jogar</h1>
     <div class="tut">
       <div><span class="n">1</span><p><b>Siga a seta dourada</b> — ela mostra onde está o próximo desperdício.</p></div>
-      <div><span class="n">2</span><p><b>Círculos azuis no chão</b> teletransportam você até cada cômodo.</p></div>
+      <div><span class="n">2</span><p><b>Para andar no VR:</b> analógico <b>esquerdo</b> anda, <b>direito</b> gira. Os <b>círculos azuis</b> no chão também teletransportam.</p></div>
       <div><span class="n">3</span><p><b>Clique no objeto com anel dourado</b> (no VR: aponte e aperte o gatilho). Escolha errada: <b>−20 pontos</b>.</p></div>
       <div><span class="n">4</span><p><b>6 desafios, 3 minutos</b>. Máximo: <b>850 pontos</b>. Boa sorte, Guardião!</p></div>
     </div>
@@ -725,6 +760,81 @@ function nota(freq,t0,dur,tipo,vol){
     o.start(AC.currentTime+t0); o.stop(AC.currentTime+t0+dur+0.05);
   }catch(e){}
 }
+/* ===== trilha rock sintetizada (bateria + baixo + power chords) ===== */
+var rockBuf=null, rockSrc=null, rockGain=null, rockOn=true;
+function makeRock(){
+  if(!AC || rockBuf!==null) return;
+  rockBuf=false;
+  try{
+    var bpm=132, spb=60/bpm, dur=spb*16, SR=44100;
+    var off=new OfflineAudioContext(1, Math.ceil(SR*dur), SR);
+    var master=off.createGain(); master.gain.value=0.9; master.connect(off.destination);
+    var ws=off.createWaveShaper();
+    (function(){ var n=512,c=new Float32Array(n); for(var i=0;i<n;i++){ var x=i*2/(n-1)-1; c[i]=Math.tanh(2.5*x); } ws.curve=c; })();
+    var gtr=off.createGain(); gtr.gain.value=0.45; ws.connect(gtr); gtr.connect(master);
+    function osc(type,f,t,d,vol,dest){
+      var o=off.createOscillator(),g=off.createGain();
+      o.type=type; o.frequency.setValueAtTime(f,t);
+      g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+d);
+      o.connect(g); g.connect(dest||master); o.start(t); o.stop(t+d+0.02);
+    }
+    function noiseHit(t,d,vol,hp){
+      var len=Math.ceil(SR*d),b=off.createBuffer(1,len,SR),ch=b.getChannelData(0);
+      for(var i=0;i<len;i++) ch[i]=(Math.random()*2-1)*(1-i/len);
+      var s=off.createBufferSource(); s.buffer=b;
+      var f=off.createBiquadFilter(); f.type=hp?'highpass':'bandpass'; f.frequency.value=hp?6000:1800;
+      var g=off.createGain(); g.gain.value=vol;
+      s.connect(f); f.connect(g); g.connect(master); s.start(t);
+    }
+    var prog=[82.41,82.41,98,110]; /* E E G A */
+    for(var bar=0;bar<4;bar++){
+      var root=prog[bar];
+      for(var e8=0;e8<8;e8++){
+        var t=bar*4*spb+e8*spb/2;
+        osc('sawtooth',root,t,0.14,0.2,ws);
+        osc('sawtooth',root*1.5,t,0.14,0.16,ws);
+        osc('sawtooth',root*2,t,0.14,0.1,ws);
+        noiseHit(t,0.04,0.1,true);
+      }
+      for(var beat=0;beat<4;beat++){
+        var tb=bar*4*spb+beat*spb;
+        if(beat%2===0){
+          (function(tb){
+            var o=off.createOscillator(),g=off.createGain();
+            o.type='sine'; o.frequency.setValueAtTime(130,tb); o.frequency.exponentialRampToValueAtTime(45,tb+0.1);
+            g.gain.setValueAtTime(0.9,tb); g.gain.exponentialRampToValueAtTime(0.001,tb+0.16);
+            o.connect(g); g.connect(master); o.start(tb); o.stop(tb+0.18);
+          })(tb);
+        } else {
+          noiseHit(tb,0.12,0.32,false);
+          osc('triangle',190,tb,0.08,0.18);
+        }
+        osc('square',root,tb,0.3,0.16);
+      }
+    }
+    off.startRendering().then(function(buf){ rockBuf=buf; });
+  }catch(e){ rockBuf=null; }
+}
+function musicStart(){
+  if(!AC||!rockOn) return;
+  function go(){
+    if(!rockBuf||rockBuf===false||rockSrc) return;
+    rockSrc=AC.createBufferSource(); rockSrc.buffer=rockBuf; rockSrc.loop=true;
+    rockGain=AC.createGain(); rockGain.gain.value=0.09;
+    rockSrc.connect(rockGain); rockGain.connect(AC.destination); rockSrc.start();
+  }
+  if(rockBuf&&rockBuf!==false){ go(); return; }
+  makeRock();
+  var h=setInterval(function(){
+    if(rockBuf&&rockBuf!==false){ clearInterval(h); if(S&&!S.fim&&rockOn) go(); }
+    else if(rockBuf===null){ clearInterval(h); }
+  },300);
+}
+function musicStop(){
+  try{ if(rockSrc){ rockSrc.stop(); rockSrc.disconnect(); } }catch(e){}
+  rockSrc=null;
+}
+
 function somAcerto(){ nota(660,0,0.18); nota(880,0.1,0.18); nota(1320,0.2,0.3); }
 function somErro(){ nota(140,0,0.3,'square',0.12); }
 function somTick(){ nota(1000,0,0.07,'sine',0.1); }
@@ -934,6 +1044,7 @@ function comecar(vr){
       if(p && p.catch) p.catch(function(){ toast('VR não ativou aqui — jogando no modo 2D. No Quest, abra o link direto no Meta Quest Browser.'); });
     }catch(e){ toast('VR não ativou — jogando no modo 2D.'); }
   }
+  musicStart();
   balao('Atenção, Guardião! Siga a seta\ndourada. Você tem 3 minutos!');
   clearInterval(timerId);
   timerId=setInterval(function(){
@@ -963,6 +1074,7 @@ function fimDeJogo(cedo){
   if(!S || S.fim) return;
   S.fim=true;
   clearInterval(timerId);
+  musicStop();
   if(AC&&aguaGain){ try{ aguaGain.gain.linearRampToValueAtTime(0,AC.currentTime+0.5); }catch(e){} }
   somFanfarra();
   var nome=($('inpNome').value||'Guardião').trim()||'Guardião';
@@ -993,6 +1105,7 @@ function fimDeJogo(cedo){
 }
 function voltarMenu(){
   clearInterval(autoId); clearInterval(timerId);
+  musicStop();
   S=null; resetCena();
   $('inpNome').value='';
   $('hud2d').style.display='none';
@@ -1009,6 +1122,11 @@ $('btnResRank').addEventListener('click',function(){ clearInterval(autoId); volt
 $('btnRankBack').addEventListener('click',function(){ if(voltarPara==='scrResult'){ voltarMenu(); } else { show(voltarPara); } });
 $('btnDeNovo').addEventListener('click',voltarMenu);
 $('btnAbort').addEventListener('click',function(){ if(S) fimDeJogo(false); });
+$('btnMusic').addEventListener('click',function(){
+  rockOn=!rockOn;
+  this.textContent = rockOn ? '🎸' : '🔇';
+  if(!rockOn) musicStop(); else if(S && !S.fim) musicStart();
+});
 
 if (tem3D){
   if (scene.hasLoaded) ligarCliques(); else scene.addEventListener('loaded', ligarCliques);

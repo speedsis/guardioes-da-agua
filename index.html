@@ -22,7 +22,6 @@ body{background:var(--navy);color:var(--ink);font-family:"Segoe UI",system-ui,-a
 #scene-wrap{position:fixed;inset:0;}
 #scene-wrap canvas{display:block;}
 a-assets,a-assets img{display:none!important;}
-
 #ui{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   padding-block:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-bottom,0px));}
@@ -131,7 +130,79 @@ if (window.AFRAME) {
       this.tex.needsUpdate=true;
     }
   });
-  /* placas de pontos sempre viradas para o jogador */
+
+  /* texturas procedurais (azulejo, madeira, grama, concreto, tijolo, céu) — sem downloads */
+  AFRAME.registerComponent('ptex', {
+    schema: { kind:{default:'grass'}, rx:{default:1}, ry:{default:1} },
+    init: function(){
+      var cv=document.createElement('canvas'); cv.width=256; cv.height=256;
+      var c=cv.getContext('2d'), k=this.data.kind;
+      function noise(n,fn){ for(var i=0;i<n;i++) fn(Math.random()*256, Math.random()*256); }
+      if(k==='grass'){
+        c.fillStyle='#6FB362'; c.fillRect(0,0,256,256);
+        noise(900,function(x,y){ c.fillStyle=Math.random()<.5?'#7DC26E':'#619E55'; c.fillRect(x,y,3,5); });
+        noise(60,function(x,y){ c.fillStyle='#8FD07E'; c.fillRect(x,y,2,7); });
+      } else if(k==='tile'){
+        c.fillStyle='#E8F4F8'; c.fillRect(0,0,256,256);
+        c.strokeStyle='#B8D4E0'; c.lineWidth=4;
+        for(var i=0;i<=4;i++){ c.beginPath(); c.moveTo(i*64,0); c.lineTo(i*64,256); c.stroke();
+          c.beginPath(); c.moveTo(0,i*64); c.lineTo(256,i*64); c.stroke(); }
+        c.fillStyle='rgba(47,168,221,.12)';
+        c.fillRect(0,0,64,64); c.fillRect(128,64,64,64); c.fillRect(64,192,64,64);
+      } else if(k==='wood'){
+        c.fillStyle='#C89A62'; c.fillRect(0,0,256,256);
+        for(var w=0;w<8;w++){ c.fillStyle=w%2?'#BE8F58':'#CFA26B'; c.fillRect(0,w*32,256,32);
+          c.strokeStyle='#A87C46'; c.lineWidth=2; c.beginPath(); c.moveTo(0,w*32); c.lineTo(256,w*32); c.stroke(); }
+        noise(40,function(x,y){ c.strokeStyle='rgba(140,100,55,.5)'; c.beginPath(); c.ellipse(x,y,6,2.5,0,0,6.3); c.stroke(); });
+      } else if(k==='concrete'){
+        c.fillStyle='#C3C7CE'; c.fillRect(0,0,256,256);
+        noise(700,function(x,y){ c.fillStyle=Math.random()<.5?'#BBBFC6':'#CBCFD6'; c.fillRect(x,y,4,4); });
+        c.strokeStyle='#A8ACB4'; c.lineWidth=3;
+        c.beginPath(); c.moveTo(128,0); c.lineTo(128,256); c.stroke();
+        c.beginPath(); c.moveTo(0,128); c.lineTo(256,128); c.stroke();
+      } else if(k==='brick'){
+        c.fillStyle='#C9CBE0'; c.fillRect(0,0,256,256);
+        c.fillStyle='#B9BBD4';
+        for(var r=0;r<8;r++){ var off=(r%2)*32; for(var b=-1;b<5;b++){ c.fillRect(b*64+off+2, r*32+2, 60, 28); } }
+      } else if(k==='sky'){
+        var g=c.createLinearGradient(0,0,0,256);
+        g.addColorStop(0,'#4FA8E8'); g.addColorStop(.55,'#9FD4F5'); g.addColorStop(.8,'#D6EEFB'); g.addColorStop(1,'#F2E9CF');
+        c.fillStyle=g; c.fillRect(0,0,256,256);
+      } else if(k==='path'){
+        c.fillStyle='#D9CFB4'; c.fillRect(0,0,256,256);
+        noise(50,function(x,y){ c.fillStyle='rgba(170,155,120,.6)'; c.beginPath(); c.ellipse(x,y,10,7,0,0,6.3); c.fill(); });
+        noise(300,function(x,y){ c.fillStyle='rgba(120,110,85,.3)'; c.fillRect(x,y,2,2); });
+      }
+      this.tex=new THREE.CanvasTexture(cv);
+      this.tex.wrapS=this.tex.wrapT=THREE.RepeatWrapping;
+      this.tex.repeat.set(this.data.rx,this.data.ry);
+      var self=this;
+      this.apply=function(){
+        var mesh=self.el.getObject3D('mesh');
+        if(mesh&&mesh.material){ mesh.material.map=self.tex; mesh.material.needsUpdate=true; }
+      };
+      this.el.addEventListener('object3dset',this.apply);
+      this.apply();
+    }
+  });
+
+  /* destaque ao apontar: cresce e brilha, mostrando que é clicável */
+  AFRAME.registerComponent('hoverable', {
+    init: function(){
+      var el=this.el, base=el.object3D.scale.clone();
+      el.addEventListener('mouseenter', function(){
+        if(el.getAttribute('visible')===false) return;
+        el.object3D.scale.set(base.x*1.18, base.y*1.18, base.z*1.18);
+        document.body.style.cursor='pointer';
+      });
+      el.addEventListener('mouseleave', function(){
+        el.object3D.scale.copy(base);
+        document.body.style.cursor='';
+      });
+    }
+  });
+
+  /* placas sempre viradas para o jogador */
   AFRAME.registerComponent('look-at-cam',{ tick:function(){
     var cam=document.getElementById('cam'); if(!cam) return;
     var v=cam.object3D.getWorldPosition(new THREE.Vector3());
@@ -143,165 +214,241 @@ if (window.AFRAME) {
 </head>
 <body>
 <div id="scene-wrap">
-<a-scene id="cena" vr-mode-ui="enabled: false" renderer="antialias: true; colorManagement: true" background="color: #AEE7FF">
+<a-scene id="cena" vr-mode-ui="enabled: false" renderer="antialias: true; colorManagement: true"
+  fog="type: linear; color: #C9E6F5; near: 20; far: 46" background="color: #9FD4F5">
   <a-assets timeout="4000">
     <img id="logoimg" src="logo_adventista.jpeg" crossorigin="anonymous">
   </a-assets>
 
-  <!-- luz -->
-  <a-entity light="type: ambient; intensity: 0.95; color: #FFFFFF"></a-entity>
-  <a-entity light="type: directional; intensity: 0.55; color: #FFF6E0" position="4 9 3"></a-entity>
+  <!-- iluminação natural -->
+  <a-entity light="type: hemisphere; color: #F2FAFF; groundColor: #9FBF8A; intensity: 0.85"></a-entity>
+  <a-entity light="type: directional; intensity: 0.75; color: #FFF3DC" position="6 12 4"></a-entity>
 
-  <!-- céu / sol / chão -->
-  <a-sphere position="18 16 -26" radius="2.2" color="#FFE27A" material="shader: flat"></a-sphere>
-  <a-circle rotation="-90 0 0" position="0 0 0" radius="30" color="#7CBF6B"></a-circle>
-  <a-circle rotation="-90 0 0" position="0 0.01 -1" radius="10.5" color="#E8DFC8"></a-circle>
+  <!-- céu com gradiente / sol / montanhas no horizonte -->
+  <a-sky ptex="kind: sky" radius="48"></a-sky>
+  <a-circle position="16 14 -34" radius="2.6" color="#FFE89B" material="shader: flat" look-at-cam></a-circle>
+  <a-circle position="16 14 -34" radius="4.2" color="#FFF3C4" material="shader: flat; opacity: 0.35; transparent: true" look-at-cam></a-circle>
+  <a-cone position="-24 0 -30" radius-bottom="12" height="9" color="#8FB6A8" material="flatShading: true"></a-cone>
+  <a-cone position="-8 0 -36" radius-bottom="14" height="12" color="#7FA99A" material="flatShading: true"></a-cone>
+  <a-cone position="26 0 -28" radius-bottom="11" height="8" color="#97BCA9" material="flatShading: true"></a-cone>
+  <a-entity position="-10 9 -28"><a-sphere radius="1.6" scale="1.6 1 1" color="#FFFFFF" material="opacity:.9;transparent:true"></a-sphere><a-sphere radius="1.2" position="1.6 .3 0" scale="1.4 1 1" color="#FFFFFF" material="opacity:.85;transparent:true"></a-sphere></a-entity>
+  <a-entity position="14 11 -24"><a-sphere radius="1.3" scale="1.7 1 1" color="#FFFFFF" material="opacity:.85;transparent:true"></a-sphere></a-entity>
 
-  <!-- árvores decorativas -->
-  <a-entity position="-11 0 -11"><a-cylinder radius="0.22" height="1.6" position="0 0.8 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.5" height="2.6" position="0 2.6 0" color="#4E9A4E"></a-cone></a-entity>
-  <a-entity position="11 0 -11"><a-cylinder radius="0.22" height="1.6" position="0 0.8 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.5" height="2.6" position="0 2.6 0" color="#5AA657"></a-cone></a-entity>
-  <a-entity position="12 0 6"><a-cylinder radius="0.2" height="1.4" position="0 0.7 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.3" height="2.3" position="0 2.3 0" color="#4E9A4E"></a-cone></a-entity>
-  <a-entity position="-12 0 6"><a-cylinder radius="0.2" height="1.4" position="0 0.7 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.3" height="2.3" position="0 2.3 0" color="#5AA657"></a-cone></a-entity>
+  <!-- chão: grama texturizada + praça central de pedra -->
+  <a-circle rotation="-90 0 0" position="0 0 0" radius="42" ptex="kind: grass; rx: 28; ry: 28" color="#FFFFFF"></a-circle>
+  <a-circle rotation="-90 0 0" position="0 0.01 -1" radius="10.5" ptex="kind: path; rx: 7; ry: 7" color="#FFFFFF"></a-circle>
+  <a-torus rotation="-90 0 0" position="0 0.02 -1" radius="10.5" radius-tubular="0.07" color="#B9A77E"></a-torus>
+
+  <!-- árvores com sombra -->
+  <a-entity position="-11 0 -11"><a-circle rotation="-90 0 0" position="0 .015 0" radius="1.5" color="#000" material="opacity:.15;transparent:true"></a-circle><a-cylinder radius="0.24" height="1.7" position="0 0.85 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.6" height="1.9" position="0 2.4 0" color="#4E9A4E" material="flatShading: true"></a-cone><a-cone radius-bottom="1.25" height="1.6" position="0 3.4 0" color="#5CB258" material="flatShading: true"></a-cone></a-entity>
+  <a-entity position="11 0 -11"><a-circle rotation="-90 0 0" position="0 .015 0" radius="1.5" color="#000" material="opacity:.15;transparent:true"></a-circle><a-cylinder radius="0.24" height="1.7" position="0 0.85 0" color="#8A5A33"></a-cylinder><a-sphere radius="1.5" position="0 2.9 0" color="#55A851" material="flatShading: true"></a-sphere><a-sphere radius="1" position="0.9 2.3 0.3" color="#63B65E" material="flatShading: true"></a-sphere></a-entity>
+  <a-entity position="12 0 6"><a-circle rotation="-90 0 0" position="0 .015 0" radius="1.3" color="#000" material="opacity:.15;transparent:true"></a-circle><a-cylinder radius="0.2" height="1.4" position="0 0.7 0" color="#8A5A33"></a-cylinder><a-sphere radius="1.2" position="0 2.4 0" color="#4E9A4E" material="flatShading: true"></a-sphere></a-entity>
+  <a-entity position="-12 0 6"><a-circle rotation="-90 0 0" position="0 .015 0" radius="1.3" color="#000" material="opacity:.15;transparent:true"></a-circle><a-cylinder radius="0.2" height="1.4" position="0 0.7 0" color="#8A5A33"></a-cylinder><a-cone radius-bottom="1.3" height="2.3" position="0 2.3 0" color="#5AA657" material="flatShading: true"></a-cone></a-entity>
 
   <!-- pórtico com a logo da escola (atrás do ponto inicial) -->
   <a-entity position="0 0 5.5" rotation="0 180 0">
-    <a-box position="-1.6 1.5 0" width="0.22" height="3" depth="0.22" color="#133B63"></a-box>
-    <a-box position="1.6 1.5 0" width="0.22" height="3" depth="0.22" color="#133B63"></a-box>
-    <a-box position="0 3.1 0" width="3.6" height="0.24" depth="0.26" color="#D9A520"></a-box>
-    <a-plane position="0 2.35 0.02" width="1.3" height="1.3" material="src: #logoimg; shader: flat"></a-plane>
-    <a-plane position="0 1.35 0.02" width="3.1" height="0.55" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 44; color: #FFFFFF; bg: #133B63; w: 640; h: 128" material="shader: flat; transparent: true"></a-plane>
+    <a-box position="-1.6 1.5 0" width="0.24" height="3" depth="0.24" color="#133B63"></a-box>
+    <a-box position="1.6 1.5 0" width="0.24" height="3" depth="0.24" color="#133B63"></a-box>
+    <a-box position="0 3.1 0" width="3.7" height="0.26" depth="0.28" color="#D9A520"></a-box>
+    <a-plane position="0 2.35 0.03" width="1.3" height="1.3" material="src: #logoimg; shader: flat"></a-plane>
+    <a-plane position="0 1.35 0.03" width="3.1" height="0.55" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 44; color: #FFFFFF; bg: #133B63; w: 640; h: 128" material="shader: flat; transparent: true"></a-plane>
   </a-entity>
 
   <!-- MASCOTE GOTINHA -->
   <a-entity id="mascote" position="0 0 -2.6">
+    <a-circle rotation="-90 0 0" position="0 .02 0" radius="0.55" color="#000" material="opacity:.16;transparent:true"></a-circle>
     <a-entity animation="property: position; from: 0 0.05 0; to: 0 0.28 0; dir: alternate; dur: 1400; loop: true; easing: easeInOutSine">
       <a-sphere radius="0.42" scale="1 1.22 1" position="0 0.75 0" color="#3EB8F0"></a-sphere>
       <a-cone radius-bottom="0.18" height="0.34" position="0 1.35 0" color="#3EB8F0"></a-cone>
+      <a-sphere radius="0.16" scale="1 1.1 1" position="-0.2 0.78 0.18" color="#5CC4F4"></a-sphere>
+      <a-sphere radius="0.16" scale="1 1.1 1" position="0.2 0.78 0.18" color="#5CC4F4"></a-sphere>
       <a-sphere radius="0.075" position="-0.14 0.85 0.36" color="#FFFFFF"></a-sphere>
       <a-sphere radius="0.075" position="0.14 0.85 0.36" color="#FFFFFF"></a-sphere>
       <a-sphere radius="0.036" position="-0.14 0.85 0.425" color="#10273D"></a-sphere>
       <a-sphere radius="0.036" position="0.14 0.85 0.425" color="#10273D"></a-sphere>
       <a-box width="0.17" height="0.045" depth="0.03" position="0 0.64 0.4" color="#0E3A57"></a-box>
     </a-entity>
-    <a-plane id="balao" position="0 2.1 0" width="2.5" height="0.86" material="shader: flat; transparent: true"
+    <a-plane id="balao" position="0 2.1 0" width="2.5" height="0.86" material="shader: flat; transparent: true" look-at-cam
       ctext="text: Olá, Guardião!; size: 42; color: #10273D; bg: #FFFFFF; w: 800; h: 276"></a-plane>
+  </a-entity>
+
+  <!-- seta-guia dourada: aponta o próximo desafio -->
+  <a-entity id="seta" visible="false" position="0 3.8 -7.4">
+    <a-entity animation="property: position; from: 0 0 0; to: 0 -0.45 0; dir: alternate; dur: 650; loop: true; easing: easeInOutQuad">
+      <a-cone radius-bottom="0.3" height="0.55" rotation="180 0 0" color="#F2B705" material="flatShading: true"></a-cone>
+      <a-box width="0.16" height="0.4" depth="0.16" position="0 0.45 0" color="#F2B705"></a-box>
+    </a-entity>
   </a-entity>
 
   <!-- ===== ESTAÇÕES ===== -->
 
   <!-- BANHEIRO -->
   <a-entity position="-6.2 0 -4.2" rotation="0 56 0">
-    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#CFE9F2"></a-plane>
-    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: BANHEIRO; size: 56; color: #FFFFFF; bg: #0E6FA3; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
-    <a-box position="0 0.08 0.75" width="1.5" height="0.16" depth="1.5" color="#BBD7E2"></a-box>
-    <a-cylinder position="0.65 2.5 0.35" radius="0.05" height="0.9" color="#9AA7B0"></a-cylinder>
-    <a-sphere position="0.65 2.05 0.5" radius="0.13" scale="1 0.6 1" color="#8795A0"></a-sphere>
+    <a-circle rotation="-90 0 0" position="0 .012 0.4" radius="2.3" color="#000" material="opacity:.12;transparent:true"></a-circle>
+    <a-plane position="0 1.6 0" width="4.4" height="3.2" ptex="kind: tile; rx: 4; ry: 3" color="#FFFFFF"></a-plane>
+    <a-box position="0 3.3 0" width="4.5" height="0.22" depth="0.3" color="#0E6FA3"></a-box>
+    <a-plane position="0 3.62 0.02" width="3.4" height="0.5" ctext="text: 🚿 BANHEIRO; size: 56; color: #FFFFFF; bg: #0E6FA3; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-box position="0 0.09 0.75" width="1.6" height="0.18" depth="1.6" ptex="kind: tile; rx: 2; ry: 2" color="#FFFFFF"></a-box>
+    <a-box position="0 0.2 0.75" width="1.64" height="0.06" depth="1.64" color="#9FB8C4"></a-box>
+    <a-cylinder position="0.65 2.5 0.35" radius="0.055" height="0.95" color="#C8D2DA" material="metalness:.6;roughness:.3"></a-cylinder>
+    <a-sphere position="0.65 2.05 0.5" radius="0.14" scale="1 0.6 1" color="#B8C4CE" material="metalness:.6;roughness:.3"></a-sphere>
     <a-entity id="agua_banheiro">
-      <a-cylinder position="0.65 1.15 0.5" radius="0.07" height="1.8" color="#8FD9FF" opacity="0.65"></a-cylinder>
-      <a-sphere radius="0.05" color="#BDE9FF" position="0.65 2 0.5" animation="property: position; from: 0.65 2 0.5; to: 0.65 0.25 0.5; dur: 650; loop: true; easing: linear"></a-sphere>
-      <a-sphere radius="0.05" color="#BDE9FF" position="0.65 2 0.5" animation="property: position; from: 0.65 2 0.5; to: 0.65 0.25 0.5; dur: 650; delay: 320; loop: true; easing: linear"></a-sphere>
+      <a-cone position="0.65 1.15 0.5" radius-top="0.05" radius-bottom="0.2" height="1.8" color="#8FD9FF" material="opacity:.5;transparent:true"></a-cone>
+      <a-sphere radius="0.05" color="#D4F0FF" position="0.65 2 0.5" animation="property: position; from: 0.65 2 0.5; to: 0.6 0.25 0.45; dur: 650; loop: true; easing: linear"></a-sphere>
+      <a-sphere radius="0.05" color="#D4F0FF" position="0.65 2 0.5" animation="property: position; from: 0.65 2 0.5; to: 0.72 0.25 0.55; dur: 650; delay: 320; loop: true; easing: linear"></a-sphere>
+      <a-circle rotation="-90 0 0" position="0.65 0.24 0.5" radius="0.3" color="#8FD9FF" material="opacity:.55;transparent:true"></a-circle>
     </a-entity>
-    <a-cylinder id="alvo_banheiro" class="clickable" position="-0.15 1.7 0.35" radius="0.17" height="0.1" rotation="90 0 0" color="#E24B3B"
-      animation="property: scale; from: 1 1 1; to: 1.18 1.18 1.18; dir: alternate; dur: 700; loop: true"></a-cylinder>
-    <a-plane position="-0.15 1.32 0.35" width="1.5" height="0.3" ctext="text: Feche o registro!; size: 40; color: #0E3A57; bg: #FFFFFF; w: 600; h: 120" material="shader: flat; transparent: true"></a-plane>
-    <a-entity id="ok_banheiro" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+    <a-entity id="alvo_banheiro" class="clickable" hoverable position="-0.15 1.7 0.38">
+      <a-sphere radius="0.42" material="opacity: 0; transparent: true"></a-sphere>
+      <a-torus radius="0.17" radius-tubular="0.045" color="#E24B3B" material="metalness:.3;roughness:.4"></a-torus>
+      <a-box width="0.3" height="0.07" depth="0.07" color="#E24B3B"></a-box>
+      <a-torus radius="0.26" radius-tubular="0.02" color="#FFD34D" material="shader: flat"
+        animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
+    </a-entity>
+    <a-plane position="-0.15 1.2 0.4" width="1.5" height="0.3" ctext="text: Feche o registro!; size: 40; color: #0E3A57; bg: #FFFFFF; w: 600; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_banheiro" visible="false"><a-circle position="0 2.9 0.06" radius="0.32" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
 
   <!-- COZINHA -->
   <a-entity position="0 0 -7.4">
-    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#F4E3C6"></a-plane>
-    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: COZINHA; size: 56; color: #FFFFFF; bg: #C07A2B; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
-    <a-box position="0 0.55 0.7" width="2.2" height="1.1" depth="0.9" color="#D9B98C"></a-box>
-    <a-box position="0 1.11 0.7" width="0.9" height="0.1" depth="0.6" color="#AFC4CF"></a-box>
-    <a-cylinder position="-0.35 1.45 0.7" radius="0.045" height="0.6" color="#9AA7B0"></a-cylinder>
-    <a-cylinder position="-0.17 1.73 0.7" radius="0.045" height="0.42" rotation="0 0 -90" color="#9AA7B0"></a-cylinder>
+    <a-circle rotation="-90 0 0" position="0 .012 0.4" radius="2.3" color="#000" material="opacity:.12;transparent:true"></a-circle>
+    <a-plane position="0 1.6 0" width="4.4" height="3.2" ptex="kind: wood; rx: 3; ry: 2" color="#FFFFFF"></a-plane>
+    <a-box position="0 3.3 0" width="4.5" height="0.22" depth="0.3" color="#C07A2B"></a-box>
+    <a-plane position="0 3.62 0.02" width="3.4" height="0.5" ctext="text: 🍽 COZINHA; size: 56; color: #FFFFFF; bg: #C07A2B; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-box position="0 0.55 0.7" width="2.3" height="1.1" depth="0.95" ptex="kind: wood; rx: 2; ry: 1" color="#FFFFFF"></a-box>
+    <a-box position="0 1.13 0.7" width="2.34" height="0.07" depth="1" color="#8A8F98"></a-box>
+    <a-box position="0 1.19 0.7" width="0.95" height="0.12" depth="0.65" color="#AFC4CF" material="metalness:.5;roughness:.35"></a-box>
+    <a-cylinder position="-0.35 1.5 0.7" radius="0.05" height="0.62" color="#C8D2DA" material="metalness:.6;roughness:.3"></a-cylinder>
+    <a-cylinder position="-0.17 1.78 0.7" radius="0.05" height="0.42" rotation="0 0 -90" color="#C8D2DA" material="metalness:.6;roughness:.3"></a-cylinder>
     <a-entity id="agua_cozinha">
-      <a-cylinder position="0 1.45 0.7" radius="0.05" height="0.56" color="#8FD9FF" opacity="0.65"></a-cylinder>
-      <a-sphere radius="0.045" color="#BDE9FF" position="0 1.7 0.7" animation="property: position; from: 0 1.7 0.7; to: 0 1.15 0.7; dur: 520; loop: true; easing: linear"></a-sphere>
+      <a-cylinder position="0 1.48 0.7" radius="0.045" height="0.55" color="#8FD9FF" material="opacity:.6;transparent:true"></a-cylinder>
+      <a-sphere radius="0.045" color="#D4F0FF" position="0 1.7 0.7" animation="property: position; from: 0 1.7 0.7; to: 0 1.22 0.7; dur: 520; loop: true; easing: linear"></a-sphere>
     </a-entity>
-    <a-cylinder id="alvo_cozinha" class="clickable" position="-0.65 1.78 0.7" radius="0.14" height="0.1" rotation="90 0 0" color="#E24B3B"
-      animation="property: scale; from: 1 1 1; to: 1.18 1.18 1.18; dir: alternate; dur: 700; loop: true"></a-cylinder>
-    <a-plane position="-0.65 2.15 0.7" width="1.6" height="0.3" ctext="text: Feche a torneira!; size: 40; color: #5A3A10; bg: #FFFFFF; w: 640; h: 120" material="shader: flat; transparent: true"></a-plane>
-    <a-entity id="ok_cozinha" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+    <a-entity id="alvo_cozinha" class="clickable" hoverable position="-0.65 1.82 0.72">
+      <a-sphere radius="0.4" material="opacity: 0; transparent: true"></a-sphere>
+      <a-torus radius="0.14" radius-tubular="0.04" color="#E24B3B" material="metalness:.3;roughness:.4"></a-torus>
+      <a-box width="0.26" height="0.06" depth="0.06" color="#E24B3B"></a-box>
+      <a-torus radius="0.23" radius-tubular="0.018" color="#FFD34D" material="shader: flat"
+        animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
+    </a-entity>
+    <a-plane position="-0.65 2.25 0.72" width="1.6" height="0.3" ctext="text: Feche a torneira!; size: 40; color: #5A3A10; bg: #FFFFFF; w: 640; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_cozinha" visible="false"><a-circle position="0 2.9 0.06" radius="0.32" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
 
   <!-- JARDIM -->
   <a-entity position="6.2 0 -4.2" rotation="0 -56 0">
-    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#D8EEC9"></a-plane>
-    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: JARDIM; size: 56; color: #FFFFFF; bg: #3F8F3F; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
-    <a-entity position="-0.9 0 0.7"><a-cylinder radius="0.04" height="0.4" position="0 0.2 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.14" position="0 0.46 0" color="#E86BA0"></a-sphere></a-entity>
-    <a-entity position="-0.45 0 0.95"><a-cylinder radius="0.04" height="0.35" position="0 0.17 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.13" position="0 0.4 0" color="#F2C53D"></a-sphere></a-entity>
-    <a-entity position="0 0 0.7"><a-cylinder radius="0.04" height="0.42" position="0 0.21 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.14" position="0 0.48 0" color="#8E6BE8"></a-sphere></a-entity>
+    <a-circle rotation="-90 0 0" position="0 .012 0.6" radius="2.4" color="#000" material="opacity:.1;transparent:true"></a-circle>
+    <a-box position="0 0.5 -0.1" width="4.4" height="1" depth="0.5" color="#5AA657" material="flatShading: true"></a-box>
+    <a-box position="0 1.05 -0.1" width="4.4" height="0.12" depth="0.55" color="#4E9A4E"></a-box>
+    <a-box position="0 3.3 0" width="4.5" height="0.22" depth="0.3" color="#3F8F3F"></a-box>
+    <a-plane position="0 3.62 0.02" width="3.4" height="0.5" ctext="text: 🌻 JARDIM; size: 56; color: #FFFFFF; bg: #3F8F3F; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-entity position="-0.9 0 0.7"><a-cylinder radius="0.045" height="0.42" position="0 0.21 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.15" position="0 0.48 0" color="#E86BA0"></a-sphere><a-sphere radius="0.07" position="0 0.48 0.11" color="#FFE27A"></a-sphere></a-entity>
+    <a-entity position="-0.45 0 0.95"><a-cylinder radius="0.045" height="0.36" position="0 0.18 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.14" position="0 0.42 0" color="#F2C53D"></a-sphere><a-sphere radius="0.065" position="0 0.42 0.1" color="#B3651E"></a-sphere></a-entity>
+    <a-entity position="0 0 0.7"><a-cylinder radius="0.045" height="0.44" position="0 0.22 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.15" position="0 0.5 0" color="#8E6BE8"></a-sphere><a-sphere radius="0.07" position="0 0.5 0.11" color="#FFE27A"></a-sphere></a-entity>
     <a-entity id="agua_jardim" position="0.95 0 0.75">
-      <a-cone radius-bottom="0.3" radius-top="0.02" height="0.9" position="0 0.55 0" rotation="55 0 0" color="#8FD9FF" opacity="0.5"></a-cone>
+      <a-cone radius-bottom="0.32" radius-top="0.02" height="0.95" position="0 0.55 0" rotation="55 0 0" color="#8FD9FF" material="opacity:.45;transparent:true"></a-cone>
+      <a-circle rotation="-90 0 0" position="0 0.02 0.5" radius="0.4" color="#8FD9FF" material="opacity:.4;transparent:true"></a-circle>
     </a-entity>
-    <a-entity id="alvo_jardim_bom" class="clickable" position="0.45 0 1.35">
-      <a-cylinder radius="0.18" height="0.3" position="0 0.15 0" color="#2E86C1"></a-cylinder>
-      <a-cylinder radius="0.03" height="0.3" position="0.2 0.22 0" rotation="0 0 -50" color="#2E86C1"></a-cylinder>
-      <a-circle position="0 0.46 0" rotation="-90 0 0" radius="0.2" color="#2FA8DD" animation="property: scale; from: 1 1 1; to: 1.25 1.25 1.25; dir: alternate; dur: 700; loop: true"></a-circle>
+    <a-entity id="alvo_jardim_bom" class="clickable" hoverable position="0.45 0.1 1.45">
+      <a-sphere radius="0.5" position="0 0.2 0" material="opacity: 0; transparent: true"></a-sphere>
+      <a-cylinder radius="0.19" height="0.32" position="0 0.16 0" color="#2E86C1" material="flatShading: true"></a-cylinder>
+      <a-cylinder radius="0.035" height="0.32" position="0.22 0.24 0" rotation="0 0 -50" color="#2E86C1"></a-cylinder>
+      <a-cone radius-bottom="0.07" radius-top="0.035" height="0.16" position="0.32 0.34 0" rotation="0 0 -130" color="#2E86C1"></a-cone>
+      <a-torus radius="0.3" radius-tubular="0.02" rotation="90 0 0" position="0 0.03 0" color="#FFD34D" material="shader: flat"
+        animation="property: scale; from: 1 1 1; to: 1.3 1.3 1.3; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
-    <a-plane position="0.45 0.85 1.35" width="1.2" height="0.28" ctext="text: Regador; size: 44; color: #0E3A57; bg: #FFFFFF; w: 480; h: 112" material="shader: flat; transparent: true"></a-plane>
-    <a-entity id="alvo_jardim_mau" class="clickable" position="1.3 0 1.1">
-      <a-torus radius="0.2" radius-tubular="0.045" rotation="90 0 0" position="0 0.08 0" color="#2E7D32"></a-torus>
-      <a-cylinder radius="0.045" height="0.4" position="0 0.2 0.15" rotation="60 0 0" color="#2E7D32"></a-cylinder>
+    <a-plane position="0.45 0.95 1.45" width="1.2" height="0.28" ctext="text: Regador; size: 44; color: #0E3A57; bg: #FFFFFF; w: 480; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="alvo_jardim_mau" class="clickable" hoverable position="1.35 0.08 1.15">
+      <a-sphere radius="0.45" position="0 0.15 0" material="opacity: 0; transparent: true"></a-sphere>
+      <a-torus radius="0.2" radius-tubular="0.05" rotation="90 0 0" position="0 0.08 0" color="#2E7D32"></a-torus>
+      <a-torus radius="0.13" radius-tubular="0.045" rotation="90 0 0" position="0 0.14 0" color="#35903B"></a-torus>
+      <a-cylinder radius="0.045" height="0.42" position="0 0.22 0.16" rotation="60 0 0" color="#2E7D32"></a-cylinder>
+      <a-cylinder radius="0.055" height="0.1" position="0 0.38 0.28" rotation="60 0 0" color="#F2C53D"></a-cylinder>
     </a-entity>
-    <a-plane position="1.3 0.75 1.1" width="1.3" height="0.28" ctext="text: Mangueira; size: 44; color: #0E3A57; bg: #FFFFFF; w: 520; h: 112" material="shader: flat; transparent: true"></a-plane>
-    <a-plane position="0 2.6 0.05" width="3.3" height="0.42" ctext="text: Qual usar para regar?; size: 46; color: #1E5B37; bg: #FFFFFF; w: 820; h: 104" material="shader: flat; transparent: true"></a-plane>
-    <a-entity id="ok_jardim" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+    <a-plane position="1.35 0.85 1.15" width="1.3" height="0.28" ctext="text: Mangueira; size: 44; color: #0E3A57; bg: #FFFFFF; w: 520; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="0 2.7 0.05" width="3.3" height="0.42" ctext="text: Qual usar para regar?; size: 46; color: #1E5B37; bg: #FFFFFF; w: 820; h: 104" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_jardim" visible="false"><a-circle position="0 2.9 0.3" radius="0.32" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.32" width="0.44" height="0.44" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
 
   <!-- GARAGEM -->
   <a-entity position="5.2 0 3.4" rotation="0 -124 0">
-    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#D7D7DE"></a-plane>
-    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: GARAGEM; size: 56; color: #FFFFFF; bg: #5A5A72; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-circle rotation="-90 0 0" position="0 .012 0.6" radius="2.5" color="#000" material="opacity:.12;transparent:true"></a-circle>
+    <a-plane position="0 1.6 0" width="4.4" height="3.2" ptex="kind: concrete; rx: 3; ry: 2" color="#FFFFFF"></a-plane>
+    <a-box position="0 3.3 0" width="4.5" height="0.22" depth="0.3" color="#5A5A72"></a-box>
+    <a-plane position="0 3.62 0.02" width="3.4" height="0.5" ctext="text: 🚗 GARAGEM; size: 56; color: #FFFFFF; bg: #5A5A72; w: 680; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-plane rotation="-90 0 0" position="0 0.02 0.9" width="3" height="2.2" ptex="kind: concrete; rx: 2; ry: 2" color="#FFFFFF"></a-plane>
     <a-entity position="0 0 0.8">
-      <a-box width="1.7" height="0.45" depth="0.8" position="0 0.45 0" color="#E24B3B"></a-box>
-      <a-box width="0.95" height="0.35" depth="0.75" position="0 0.83 0" color="#F0776A"></a-box>
-      <a-cylinder radius="0.17" height="0.12" rotation="0 0 90" position="-0.55 0.2 0.42" color="#222730"></a-cylinder>
-      <a-cylinder radius="0.17" height="0.12" rotation="0 0 90" position="0.55 0.2 0.42" color="#222730"></a-cylinder>
+      <a-box width="1.8" height="0.42" depth="0.85" position="0 0.45 0" color="#E24B3B" material="metalness:.35;roughness:.4"></a-box>
+      <a-box width="1" height="0.36" depth="0.78" position="-0.05 0.83 0" color="#F0776A" material="metalness:.35;roughness:.4"></a-box>
+      <a-plane width="0.34" height="0.26" position="-0.58 0.84 0.01" rotation="0 0 8" color="#BFE6F5"></a-plane>
+      <a-plane width="0.34" height="0.26" position="0.48 0.84 0.01" rotation="0 0 -8" color="#BFE6F5"></a-plane>
+      <a-cylinder radius="0.18" height="0.14" rotation="0 0 90" position="-0.58 0.2 0.44" color="#23262E"></a-cylinder>
+      <a-cylinder radius="0.18" height="0.14" rotation="0 0 90" position="0.58 0.2 0.44" color="#23262E"></a-cylinder>
+      <a-cylinder radius="0.09" height="0.15" rotation="0 0 90" position="-0.58 0.2 0.44" color="#C8D2DA"></a-cylinder>
+      <a-cylinder radius="0.09" height="0.15" rotation="0 0 90" position="0.58 0.2 0.44" color="#C8D2DA"></a-cylinder>
+      <a-sphere radius="0.05" position="0.9 0.5 0.28" color="#FFE89B" material="shader: flat"></a-sphere>
+      <a-sphere radius="0.05" position="0.9 0.5 -0.28" color="#FFE89B" material="shader: flat"></a-sphere>
     </a-entity>
     <a-entity id="agua_garagem" position="-1.2 0 1.15">
-      <a-cone radius-bottom="0.22" radius-top="0.02" height="0.8" position="0 0.5 0" rotation="60 0 0" color="#8FD9FF" opacity="0.5"></a-cone>
+      <a-cone radius-bottom="0.24" radius-top="0.02" height="0.85" position="0 0.5 0" rotation="60 0 0" color="#8FD9FF" material="opacity:.45;transparent:true"></a-cone>
+      <a-circle rotation="-90 0 0" position="0 0.03 0.45" radius="0.42" color="#8FD9FF" material="opacity:.4;transparent:true"></a-circle>
     </a-entity>
-    <a-entity id="alvo_garagem_bom" class="clickable" position="1.25 0 1.3">
-      <a-cylinder radius="0.2" height="0.34" position="0 0.17 0" color="#2E86C1"></a-cylinder>
-      <a-circle position="0 0.4 0" rotation="-90 0 0" radius="0.22" color="#2FA8DD" animation="property: scale; from: 1 1 1; to: 1.25 1.25 1.25; dir: alternate; dur: 700; loop: true"></a-circle>
+    <a-entity id="alvo_garagem_bom" class="clickable" hoverable position="1.3 0.1 1.35">
+      <a-sphere radius="0.5" position="0 0.2 0" material="opacity: 0; transparent: true"></a-sphere>
+      <a-cylinder radius="0.21" height="0.36" position="0 0.18 0" color="#2E86C1" material="flatShading: true"></a-cylinder>
+      <a-cylinder radius="0.17" height="0.05" position="0 0.37 0" color="#8FD9FF"></a-cylinder>
+      <a-torus radius="0.14" radius-tubular="0.018" rotation="0 0 90" position="0.21 0.3 0" color="#1F618D"></a-torus>
+      <a-torus radius="0.32" radius-tubular="0.02" rotation="90 0 0" position="0 0.03 0" color="#FFD34D" material="shader: flat"
+        animation="property: scale; from: 1 1 1; to: 1.3 1.3 1.3; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
-    <a-plane position="1.25 0.85 1.3" width="1.0" height="0.28" ctext="text: Balde; size: 46; color: #0E3A57; bg: #FFFFFF; w: 400; h: 112" material="shader: flat; transparent: true"></a-plane>
-    <a-entity id="alvo_garagem_mau" class="clickable" position="-1.25 0 1.4">
-      <a-torus radius="0.2" radius-tubular="0.045" rotation="90 0 0" position="0 0.08 0" color="#2E7D32"></a-torus>
-      <a-cylinder radius="0.045" height="0.4" position="0 0.2 0.15" rotation="60 0 0" color="#2E7D32"></a-cylinder>
+    <a-plane position="1.3 0.95 1.35" width="1.0" height="0.28" ctext="text: Balde; size: 46; color: #0E3A57; bg: #FFFFFF; w: 400; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="alvo_garagem_mau" class="clickable" hoverable position="-1.3 0.08 1.45">
+      <a-sphere radius="0.45" position="0 0.15 0" material="opacity: 0; transparent: true"></a-sphere>
+      <a-torus radius="0.2" radius-tubular="0.05" rotation="90 0 0" position="0 0.08 0" color="#2E7D32"></a-torus>
+      <a-torus radius="0.13" radius-tubular="0.045" rotation="90 0 0" position="0 0.14 0" color="#35903B"></a-torus>
+      <a-cylinder radius="0.045" height="0.42" position="0 0.22 0.16" rotation="60 0 0" color="#2E7D32"></a-cylinder>
+      <a-cylinder radius="0.055" height="0.1" position="0 0.38 0.28" rotation="60 0 0" color="#F2C53D"></a-cylinder>
     </a-entity>
-    <a-plane position="-1.25 0.75 1.4" width="1.3" height="0.28" ctext="text: Mangueira; size: 44; color: #0E3A57; bg: #FFFFFF; w: 520; h: 112" material="shader: flat; transparent: true"></a-plane>
-    <a-plane position="0 2.6 0.05" width="3.3" height="0.42" ctext="text: Como lavar o carro?; size: 46; color: #33334A; bg: #FFFFFF; w: 820; h: 104" material="shader: flat; transparent: true"></a-plane>
-    <a-entity id="ok_garagem" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+    <a-plane position="-1.3 0.85 1.45" width="1.3" height="0.28" ctext="text: Mangueira; size: 44; color: #0E3A57; bg: #FFFFFF; w: 520; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="0 2.7 0.05" width="3.3" height="0.42" ctext="text: Como lavar o carro?; size: 46; color: #33334A; bg: #FFFFFF; w: 820; h: 104" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_garagem" visible="false"><a-circle position="0 2.9 0.3" radius="0.32" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.32" width="0.44" height="0.44" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
 
   <!-- ÁREA DE SERVIÇO -->
   <a-entity position="-5.2 0 3.4" rotation="0 124 0">
-    <a-plane position="0 1.6 0" width="4.2" height="3.2" color="#E7D8EE"></a-plane>
-    <a-plane position="0 3.45 0.02" width="3.4" height="0.5" ctext="text: ÁREA DE SERVIÇO; size: 50; color: #FFFFFF; bg: #6E4E8E; w: 760; h: 100" material="shader: flat; transparent: true"></a-plane>
-    <a-cylinder radius="0.07" height="2.6" rotation="0 0 90" position="0 2.2 0.18" color="#8795A0"></a-cylinder>
-    <a-cylinder radius="0.07" height="1.0" position="-1.3 1.7 0.18" color="#8795A0"></a-cylinder>
+    <a-circle rotation="-90 0 0" position="0 .012 0.4" radius="2.3" color="#000" material="opacity:.12;transparent:true"></a-circle>
+    <a-plane position="0 1.6 0" width="4.4" height="3.2" ptex="kind: brick; rx: 3; ry: 3" color="#FFFFFF"></a-plane>
+    <a-box position="0 3.3 0" width="4.5" height="0.22" depth="0.3" color="#6E4E8E"></a-box>
+    <a-plane position="0 3.62 0.02" width="3.4" height="0.5" ctext="text: 🔧 ÁREA DE SERVIÇO; size: 46; color: #FFFFFF; bg: #6E4E8E; w: 760; h: 100" material="shader: flat; transparent: true"></a-plane>
+    <a-cylinder radius="0.08" height="2.7" rotation="0 0 90" position="0 2.2 0.18" color="#AEB8C0" material="metalness:.55;roughness:.35"></a-cylinder>
+    <a-cylinder radius="0.08" height="1.0" position="-1.35 1.7 0.18" color="#AEB8C0" material="metalness:.55;roughness:.35"></a-cylinder>
+    <a-torus radius="0.1" radius-tubular="0.028" rotation="0 90 0" position="-0.7 2.2 0.18" color="#8A98A3"></a-torus>
+    <a-box width="0.5" height="0.7" depth="0.5" position="1.5 0.35 0.5" color="#DFE6EC"></a-box>
+    <a-circle position="1.5 0.55 0.76" radius="0.14" color="#9FB8C4"></a-circle>
     <a-entity id="agua_servico" position="0.2 2.2 0.25">
-      <a-sphere radius="0.045" color="#BDE9FF" animation="property: position; from: 0 0 0; to: 0.25 -1.4 0.45; dur: 600; loop: true; easing: linear"></a-sphere>
-      <a-sphere radius="0.045" color="#BDE9FF" animation="property: position; from: 0 0 0; to: -0.2 -1.5 0.5; dur: 700; delay: 250; loop: true; easing: linear"></a-sphere>
-      <a-sphere radius="0.045" color="#BDE9FF" animation="property: position; from: 0 0 0; to: 0.05 -1.45 0.55; dur: 650; delay: 450; loop: true; easing: linear"></a-sphere>
-      <a-cylinder radius="0.16" height="0.04" position="0.05 -1.5 0.45" color="#8FD9FF" opacity="0.6"></a-cylinder>
+      <a-sphere radius="0.045" color="#D4F0FF" animation="property: position; from: 0 0 0; to: 0.25 -1.4 0.45; dur: 600; loop: true; easing: linear"></a-sphere>
+      <a-sphere radius="0.045" color="#D4F0FF" animation="property: position; from: 0 0 0; to: -0.2 -1.5 0.5; dur: 700; delay: 250; loop: true; easing: linear"></a-sphere>
+      <a-sphere radius="0.045" color="#D4F0FF" animation="property: position; from: 0 0 0; to: 0.05 -1.45 0.55; dur: 650; delay: 450; loop: true; easing: linear"></a-sphere>
+      <a-cylinder radius="0.22" height="0.04" position="0.05 -1.5 0.45" color="#8FD9FF" material="opacity:.55;transparent:true"></a-cylinder>
     </a-entity>
-    <a-sphere id="alvo_servico" class="clickable" position="0.2 2.2 0.18" radius="0.17" color="#E2A63B"
-      animation="property: scale; from: 1 1 1; to: 1.2 1.2 1.2; dir: alternate; dur: 700; loop: true"></a-sphere>
-    <a-plane position="0.2 1.6 0.3" width="2.0" height="0.3" ctext="text: Conserte o vazamento!; size: 40; color: #4A2E66; bg: #FFFFFF; w: 800; h: 120" material="shader: flat; transparent: true"></a-plane>
-    <a-entity id="ok_servico" visible="false"><a-circle position="0 2.9 0.06" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.08" width="0.44" height="0.44" ctext="text: OK; size: 72; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
+    <a-entity id="alvo_servico" class="clickable" hoverable position="0.2 2.2 0.2">
+      <a-sphere radius="0.45" material="opacity: 0; transparent: true"></a-sphere>
+      <a-sphere radius="0.16" color="#E2A63B" material="metalness:.3;roughness:.45"></a-sphere>
+      <a-box width="0.34" height="0.09" depth="0.09" rotation="0 0 30" color="#8A98A3" material="metalness:.6;roughness:.3"></a-box>
+      <a-torus radius="0.26" radius-tubular="0.02" color="#FFD34D" material="shader: flat"
+        animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
+    </a-entity>
+    <a-plane position="0.2 1.55 0.3" width="2.0" height="0.3" ctext="text: Conserte o vazamento!; size: 40; color: #4A2E66; bg: #FFFFFF; w: 800; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-entity id="ok_servico" visible="false"><a-circle position="0 2.9 0.35" radius="0.32" color="#2E9E5B"></a-circle><a-plane position="0 2.9 0.37" width="0.44" height="0.44" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
 
-  <!-- pontos de teletransporte -->
-  <a-circle class="clickable tp" data-tp="-4.6 0 -3.1" position="-4.6 0.02 -3.1" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
-  <a-circle class="clickable tp" data-tp="0 0 -5.5" position="0 0.02 -5.5" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
-  <a-circle class="clickable tp" data-tp="4.6 0 -3.1" position="4.6 0.02 -3.1" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
-  <a-circle class="clickable tp" data-tp="3.8 0 2.4" position="3.8 0.02 2.4" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
-  <a-circle class="clickable tp" data-tp="-3.8 0 2.4" position="-3.8 0.02 2.4" rotation="-90 0 0" radius="0.5" color="#2FA8DD" opacity="0.85"></a-circle>
-  <a-circle class="clickable tp" data-tp="0 0 0" position="0 0.02 0.9" rotation="-90 0 0" radius="0.5" color="#D9A520" opacity="0.9"></a-circle>
+  <!-- pontos de teletransporte (maiores e com aro) -->
+  <a-entity class="clickable tp" hoverable data-tp="-4.6 0 -3.1" position="-4.6 0.02 -3.1"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
+  <a-entity class="clickable tp" hoverable data-tp="0 0 -5.5" position="0 0.02 -5.5"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
+  <a-entity class="clickable tp" hoverable data-tp="4.6 0 -3.1" position="4.6 0.02 -3.1"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
+  <a-entity class="clickable tp" hoverable data-tp="3.8 0 2.4" position="3.8 0.02 2.4"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
+  <a-entity class="clickable tp" hoverable data-tp="-3.8 0 2.4" position="-3.8 0.02 2.4"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
+  <a-entity class="clickable tp" hoverable data-tp="0 0 0" position="0 0.02 0.9"><a-circle rotation="-90 0 0" radius="0.6" color="#D9A520" material="opacity:.85;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#FFD34D" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
 
   <!-- jogador -->
   <a-entity id="rig" position="0 0 0">
@@ -314,7 +461,7 @@ if (window.AFRAME) {
     <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 25" line="color: #2FA8DD"></a-entity>
     <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 25" line="color: #2FA8DD"></a-entity>
   </a-entity>
-  <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable; far: 60"></a-entity>
+  <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable; far: 60; interval: 60"></a-entity>
 </a-scene>
 </div>
 
@@ -349,9 +496,9 @@ if (window.AFRAME) {
     <div class="tag">Tutorial rápido</div>
     <h1>Como jogar</h1>
     <div class="tut">
-      <div><span class="n">1</span><p><b>Aponte e aperte o gatilho</b> do controle (no 2D: mire e clique/toque).</p></div>
+      <div><span class="n">1</span><p><b>Siga a seta dourada</b> — ela mostra onde está o próximo desperdício.</p></div>
       <div><span class="n">2</span><p><b>Círculos azuis no chão</b> teletransportam você até cada cômodo.</p></div>
-      <div><span class="n">3</span><p><b>Feche o que desperdiça</b>: registros vermelhos, vazamento e escolha os objetos certos. Escolha errada: <b>−20 pontos</b>.</p></div>
+      <div><span class="n">3</span><p><b>Aponte e aperte o gatilho</b> (no 2D: clique). O objeto certo brilha com um <b>anel dourado</b>. Escolha errada: <b>−20 pontos</b>.</p></div>
       <div><span class="n">4</span><p><b>3 minutos</b> no relógio. Máximo: <b>700 pontos</b>. Boa sorte, Guardião!</p></div>
     </div>
     <button class="btn btn-gold" id="btnGo" type="button">▶ COMEÇAR AGORA</button>
@@ -383,7 +530,7 @@ if (window.AFRAME) {
 <div id="toast"></div>
 
 <script>
-/* Avanço do splash independente de tudo: nunca mais travar na tela inicial */
+/* Avanço do splash independente de tudo */
 setTimeout(function(){
   var s=document.getElementById('scrSplash'), m=document.getElementById('scrMenu');
   if (s && !s.hidden && m){ s.hidden=true; m.hidden=false; }
@@ -397,6 +544,9 @@ setTimeout(function(){
 var DUR = 180;
 var PONTOS = { banheiro:100, cozinha:100, jardim:150, garagem:150, servico:200 };
 var LITROS = { banheiro:45, cozinha:30, jardim:50, garagem:80, servico:100 };
+var NOMES = { banheiro:'Banheiro', cozinha:'Cozinha', jardim:'Jardim', garagem:'Garagem', servico:'Área de Serviço' };
+var SETA_POS = { banheiro:'-6.2 3.9 -4.2', cozinha:'0 3.9 -7.4', jardim:'6.2 3.9 -4.2', garagem:'5.2 3.9 3.4', servico:'-5.2 3.9 3.4' };
+var ORDEM = ['cozinha','banheiro','jardim','garagem','servico'];
 var FRASES = {
   banheiro:'Isso! Fechar o chuveiro ao se ensaboar\neconomiza até 45 litros!',
   cozinha:'Muito bem! Torneira fechada ao ensaboar\na louça poupa 30 litros!',
@@ -495,7 +645,7 @@ function rankRender(){
   });
 }
 
-/* ================== MASCOTE / HUD / POPUP (toleram falta do 3D) ================== */
+/* ================== MASCOTE / HUD / SETA / POPUP ================== */
 function setCtext(id, txt){
   var el=$(id); if(!el) return;
   try{ el.setAttribute('ctext','text',txt); }catch(e){}
@@ -505,13 +655,25 @@ function balao(txt, voz){
   setCtext('balao', txt);
   if(voz!==false) falar(txt);
   clearTimeout(balaoH);
-  balaoH=setTimeout(function(){ setCtext('balao','Vamos lá, Guardião!'); },5000);
+  balaoH=setTimeout(function(){ setCtext('balao','Siga a seta dourada!'); },5200);
 }
 function fmt(t){ var m=Math.floor(t/60), s=t%60; return m+':'+(s<10?'0':'')+s; }
 function hud(){
   if(!S) return;
   setCtext('hudvr','⏱ '+fmt(S.t)+'    ⭐ '+S.pts+'    ✔ '+S.feitos+'/5');
   $('h2time').textContent=fmt(S.t); $('h2pts').textContent=S.pts; $('h2done').textContent=S.feitos+'/5';
+}
+function proximoDesafio(){
+  if(!S) return null;
+  for(var i=0;i<ORDEM.length;i++){ if(!S.done[ORDEM[i]]) return ORDEM[i]; }
+  return null;
+}
+function atualizaSeta(){
+  var seta=$('seta'); if(!seta) return;
+  var prox=proximoDesafio();
+  if(!prox){ seta.setAttribute('visible','false'); return; }
+  seta.setAttribute('visible','true');
+  seta.setAttribute('position', SETA_POS[prox]);
 }
 function popup(el, txt, cor){
   if(!tem3D || !el || !el.object3D) return;
@@ -540,9 +702,10 @@ function acerto(key, alvoEl){
   S.done[key]=true; S.feitos++; S.pts+=PONTOS[key]; S.litros+=LITROS[key];
   setVis('agua_'+key,false); setVis('ok_'+key,true);
   if(alvoEl) alvoEl.setAttribute('visible','false');
-  somAcerto(); aguaVolume();
+  somAcerto(); aguaVolume(); atualizaSeta();
   popup(alvoEl, '+'+PONTOS[key], '#2E9E5B');
-  balao(FRASES[key]);
+  var prox=proximoDesafio();
+  balao(FRASES[key] + (prox ? '\nAgora vá para: '+NOMES[prox]+'!' : ''));
   hud();
   if(S.feitos===5) setTimeout(function(){ fimDeJogo(true); },900);
 }
@@ -551,7 +714,7 @@ function erro(key, alvoEl){
   S.pts=Math.max(0,S.pts-20); S.erros++;
   somErro();
   popup(alvoEl,'-20','#C94F3D');
-  balao('Ops! Assim gasta muita água.\nTente a outra opção!');
+  balao('Ops! Assim gasta muita água.\nTente a opção com anel dourado!');
   hud();
 }
 function liga(id,fn){ var el=$(id); if(el) el.addEventListener('click',function(){ fn(this); }); }
@@ -577,13 +740,13 @@ function resetCena(){
     setVis('agua_'+k,true); setVis('ok_'+k,false);
   });
   ['alvo_banheiro','alvo_cozinha','alvo_servico','alvo_jardim_bom','alvo_garagem_bom'].forEach(function(id){ setVis(id,true); });
-  setVis('painelfinal',false);
+  setVis('painelfinal',false); setVis('seta',false);
   if(rig) rig.setAttribute('position','0 0 0');
 }
 function comecar(vr){
   if(!tem3D){ toast('O motor 3D não carregou. Verifique a internet e recarregue a página.'); return; }
   modoVR=vr; audioInit();
-  S=novoEstado(); resetCena(); hud(); aguaVolume();
+  S=novoEstado(); resetCena(); hud(); aguaVolume(); atualizaSeta();
   show(null);
   $('hud2d').style.display='flex';
   if(vr){
@@ -592,7 +755,7 @@ function comecar(vr){
       if(p && p.catch) p.catch(function(){ toast('VR não ativou aqui — jogando no modo 2D. No Quest, abra o link direto no Meta Quest Browser.'); });
     }catch(e){ toast('VR não ativou — jogando no modo 2D.'); }
   }
-  balao('Atenção, Guardião! Encontre os 5\ndesperdícios. Você tem 3 minutos!');
+  balao('Atenção, Guardião! Siga a seta\ndourada. Você tem 3 minutos!');
   clearInterval(timerId);
   timerId=setInterval(function(){
     S.t--;
@@ -627,7 +790,7 @@ function fimDeJogo(cedo){
   var cls=classif(S.pts);
   falar('Parabéns, '+nome+'! Você fez '+S.pts+' pontos e é '+cls+'!');
   setCtext('painelfinal','MISSÃO CONCLUÍDA!\n\n'+nome+'\n⭐ '+S.pts+' pontos\n'+cls+'\n💧 '+S.litros+' litros preservados');
-  setVis('painelfinal',true);
+  setVis('painelfinal',true); setVis('seta',false);
   setTimeout(function(){
     try{ if(scene && scene.is && scene.is('vr-mode')) scene.exitVR(); }catch(e){}
     $('hud2d').style.display='none';
@@ -656,7 +819,7 @@ function voltarMenu(){
   show('scrMenu');
 }
 
-/* ================== FLUXO DE TELAS (sempre funciona, mesmo sem 3D) ================== */
+/* ================== FLUXO DE TELAS ================== */
 var modoEscolhido=false; var voltarPara='scrMenu';
 $('btnMenuVR').addEventListener('click',function(){ modoEscolhido=true; audioInit(); $('tutMode').textContent='Modo escolhido: VR (Meta Quest). Pegue os dois controles!'; show('scrTutorial'); });
 $('btnMenu2D').addEventListener('click',function(){ modoEscolhido=false; audioInit(); $('tutMode').textContent='Modo escolhido: 2D. Mouse/toque para olhar, WASD anda, clique nos círculos azuis para se mover.'; show('scrTutorial'); });

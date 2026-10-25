@@ -565,7 +565,7 @@ if (window.AFRAME) {
   <!-- jogador -->
   <a-entity id="rig" position="0 0 0">
     <a-entity id="cam" camera look-controls wasd-controls="acceleration: 28" position="0 1.6 0">
-      <a-plane id="hudvr" position="0 0.62 -1.35" width="1.7" height="0.26" material="shader: flat; transparent: true"
+      <a-plane id="hudvr" visible="false" position="0 0.62 -1.35" width="1.7" height="0.26" material="shader: flat; transparent: true"
         ctext="text: ; size: 52; color: #FFFFFF; bg: #10273D; w: 1020; h: 156"></a-plane>
       <a-plane id="painelfinal" visible="false" position="0 0 -1.7" width="2.3" height="1.5" material="shader: flat; transparent: true"
         ctext="text: ; size: 54; color: #10273D; bg: #F6F9FC; w: 1000; h: 650"></a-plane>
@@ -1012,6 +1012,8 @@ $('btnAbort').addEventListener('click',function(){ if(S) fimDeJogo(false); });
 
 if (tem3D){
   if (scene.hasLoaded) ligarCliques(); else scene.addEventListener('loaded', ligarCliques);
+  scene.addEventListener('enter-vr',function(){ setVis('hudvr',true); });
+  scene.addEventListener('exit-vr',function(){ setVis('hudvr',false); });
 } else {
   window.__gaguaErro('O motor 3D não carregou. Verifique a internet e recarregue a página.');
 }

@@ -759,8 +759,8 @@ if (window.AFRAME) {
   <!-- jogador -->
   <a-entity id="rig" position="0 0 0">
     <a-entity id="cam" camera look-controls wasd-controls="acceleration: 28" position="0 1.6 0">
-      <a-plane id="hudvr" visible="false" position="0 0.62 -1.35" width="1.7" height="0.26" material="shader: flat; transparent: true"
-        ctext="text: ; size: 52; color: #FFFFFF; bg: #10273D; w: 1020; h: 156"></a-plane>
+      <a-plane id="hudvr" visible="false" position="0.52 0.42 -1.3" rotation="-8 -16 0" width="0.78" height="0.12" material="shader: flat; transparent: true"
+        ctext="text: ; size: 52; color: #FFFFFF; bg: #10273DB8; w: 1020; h: 156"></a-plane>
       <a-plane id="painelfinal" visible="false" position="0 0 -1.7" width="2.3" height="1.5" material="shader: flat; transparent: true"
         ctext="text: ; size: 54; color: #10273D; bg: #F6F9FC; w: 1000; h: 650"></a-plane>
     </a-entity>
@@ -804,8 +804,8 @@ if (window.AFRAME) {
     <h1>⚙ Gerenciar partida</h1>
     <div class="cfgrow"><label>Tempo máximo da partida</label>
       <select id="cfgCap">
-        <option value="90">1:30</option><option value="120">2:00</option>
-        <option value="180" selected>3:00</option><option value="240">4:00</option><option value="300">5:00</option>
+        <option value="90">1:30</option><option value="120" selected>2:00</option>
+        <option value="180">3:00</option><option value="240">4:00</option><option value="300">5:00</option>
       </select></div>
     <div class="cfgrow"><label>Penalidade por erro</label>
       <select id="cfgPen">
@@ -905,13 +905,13 @@ var $ = function(id){ return document.getElementById(id); };
 var scene = $('cena'), rig = $('rig');
 
 /* ================== CONFIGURAÇÃO (painel do professor) ================== */
-var CFG = { cap:180, pen:5, musica:true, ativas:{} };
+var CFG = { cap:120, pen:5, musica:true, ativas:{} };
 CHAVES.forEach(function(k){ CFG.ativas[k]=true; });
 try{
   var salvo=JSON.parse(localStorage.getItem('gagua_cfg')||'null');
-  if(salvo){ CFG.cap=salvo.cap||180; CFG.pen=(salvo.pen!=null?salvo.pen:5); CFG.musica=salvo.musica!==false;
+  if(salvo){ CFG.cap=salvo.cap||120; CFG.pen=(salvo.pen!=null?salvo.pen:5); CFG.musica=salvo.musica!==false;
     if(salvo.ativas) CHAVES.forEach(function(k){ CFG.ativas[k]=salvo.ativas[k]!==false; });
-    if(CFG.cap===240) CFG.cap=180; /* migra o padrão antigo para o novo tempo */ }
+    if(CFG.cap===240||CFG.cap===180) CFG.cap=120; /* migra padrões antigos para o novo tempo */ }
 }catch(e){}
 function cfgSalva(){ try{ localStorage.setItem('gagua_cfg', JSON.stringify(CFG)); }catch(e){} }
 function ativasLista(){ return CHAVES.filter(function(k){ return CFG.ativas[k]; }); }
@@ -1143,7 +1143,7 @@ function fmt(t){ var m=Math.floor(t/60), s=t%60; return m+':'+(s<10?'0':'')+s; }
 function hud(){
   if(!S) return;
   var n=S.total;
-  setCtext('hudvr','⭐ '+S.pts+'    💧 '+S.litros+' L    ✔ '+S.feitos+'/'+n+'    ⏱ '+fmt(S.t));
+  setCtext('hudvr','⭐'+S.pts+'  💧'+S.litros+'L  ✔'+S.feitos+'/'+n+'  ⏱'+fmt(S.t));
   $('h2time').textContent=fmt(S.t); $('h2pts').textContent=S.pts; $('h2done').textContent=S.feitos+'/'+n;
   $('h2agua').textContent=S.litros+' L';
 }
@@ -1367,7 +1367,23 @@ function resetCena(){
     }
   });
   setVis('painelfinal',false); setVis('seta',false);
-  if(rig) rig.setAttribute('position','0 0 0');
+  if(rig){ rig.setAttribute('position','0 0 0'); rig.object3D.rotation.y=0; }
+}
+/* garante que o jogador comece olhando para o Gotinha (frente, -z) */
+function virarParaMascote(){
+  try{
+    var cam=$('cam');
+    if(!scene.is('vr-mode')){
+      var lc=cam.components && cam.components['look-controls'];
+      if(lc && lc.yawObject){ lc.yawObject.rotation.y=0; lc.pitchObject.rotation.x=0; }
+      return;
+    }
+    var d=new THREE.Vector3(); cam.object3D.getWorldDirection(d); d.negate(); d.y=0;
+    if(d.lengthSq()<0.0001) return;
+    d.normalize();
+    var erro=Math.atan2(d.x,-d.z);
+    rig.object3D.rotation.y -= erro;
+  }catch(e){}
 }
 function comecar(vr){
   if(!tem3D){ toast('O motor 3D não carregou. Verifique a internet e recarregue a página.'); return; }
@@ -1376,6 +1392,8 @@ function comecar(vr){
   S=novoEstado(); resetCena(); hud(); aguaVolume(); atualizaSeta();
   show(null);
   $('hud2d').style.display='flex';
+  virarParaMascote();
+  setTimeout(virarParaMascote, 800);
   if(vr){
     try{
       var p=scene.enterVR();
@@ -1495,7 +1513,10 @@ $('btnCfgZerarRank').addEventListener('click',function(){
 atualizaMenus();
 if (tem3D){
   if (scene.hasLoaded) ligarCliques(); else scene.addEventListener('loaded', ligarCliques);
-  scene.addEventListener('enter-vr',function(){ setVis('hudvr',true); });
+  scene.addEventListener('enter-vr',function(){
+    setVis('hudvr',true);
+    if(S && !S.fim) setTimeout(virarParaMascote, 700);
+  });
   scene.addEventListener('exit-vr',function(){ setVis('hudvr',false); });
   if (scene.hasLoaded) resetCena(); else scene.addEventListener('loaded', resetCena);
 } else {

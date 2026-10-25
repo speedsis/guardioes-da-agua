@@ -953,8 +953,12 @@ var ACOES = {
   alvo_garagem_bom: function(el){ acerto('garagem',el); },
   alvo_garagem_mau: function(el){ erro('garagem',el); }
 };
+var _lastExec={el:null,t:0};
 function executa(el){
   if(!el) return;
+  var agora=Date.now();
+  if(_lastExec.el===el && agora-_lastExec.t<350) return;  /* evita disparo duplo */
+  _lastExec.el=el; _lastExec.t=agora;
   if(el.id && ACOES[el.id]){ ACOES[el.id](el); return; }
   if(el.classList.contains('tp')){
     var p=el.getAttribute('data-tp').split(' ');
@@ -964,10 +968,26 @@ function executa(el){
     if(room && S && !S.done[room]) balao(MISSAO[room]);
   }
 }
-/* clique VR: os controles (laser-controls) emitem 'click' nos .clickable */
+/* clique VR: gatilho E botão A/X disparam direto no que o laser aponta */
+function alvoClicavel(t){
+  while(t && !(t.classList && t.classList.contains('clickable'))) t=t.parentElement;
+  if(t && t.getAttribute('visible')!==false) return t;
+  return null;
+}
 function ligarCliquesVR(){
   Array.prototype.forEach.call(document.querySelectorAll('.clickable'),function(el){
     el.addEventListener('click',function(){ executa(el); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[laser-controls]'),function(hand){
+    function fire(){
+      var ray=hand.components && hand.components.raycaster;
+      if(!ray || !ray.intersectedEls || !ray.intersectedEls.length) return;
+      var t=alvoClicavel(ray.intersectedEls[0]);
+      if(t) executa(t);
+    }
+    ['triggerdown','abuttondown','xbuttondown','trackpaddown'].forEach(function(ev){
+      hand.addEventListener(ev,fire);
+    });
   });
 }
 /* clique 2D PRÓPRIO: raycast manual da câmera — funciona em qualquer navegador/toque */

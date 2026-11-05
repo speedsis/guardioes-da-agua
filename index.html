@@ -246,7 +246,7 @@ if (window.AFRAME) {
         [8.6,0.6,1.5],                           /* caixa d'água */
         [-11,-11,0.7],[11,-11,0.7],[-12,6,0.7],  /* árvores */
         [-1.6,5.5,0.3],[1.6,5.5,0.3],            /* pórtico */
-        [-3.4,4.8,0.55],                         /* mascote (ao lado do portão) */
+        [-4.3,5.4,0.55],                         /* mascote (ao lado do portão) */
         [-1.9,2.3,0.55],[1.9,2.3,0.55]           /* bancos da praça */
       ];
       var self=this;
@@ -404,7 +404,7 @@ if (window.AFRAME) {
   </a-entity>
 
   <!-- MASCOTE GOTINHA: à esquerda do portão, recepcionando sem bloquear a entrada -->
-  <a-entity id="mascote" position="-3.4 0 4.8" rotation="0 46 0">
+  <a-entity id="mascote" position="-4.3 0 5.4" rotation="0 40 0">
     <a-circle rotation="-90 0 0" position="0 .02 0" radius="0.55" color="#000" material="opacity:.16;transparent:true"></a-circle>
     <a-entity animation="property: position; from: 0 0.05 0; to: 0 0.28 0; dir: alternate; dur: 1400; loop: true; easing: easeInOutSine">
       <a-sphere radius="0.42" scale="1 1.22 1" position="0 0.75 0" color="#3EB8F0"></a-sphere>
@@ -417,7 +417,7 @@ if (window.AFRAME) {
       <a-sphere radius="0.036" position="0.14 0.85 0.425" color="#10273D"></a-sphere>
       <a-box width="0.17" height="0.045" depth="0.03" position="0 0.64 0.4" color="#0E3A57"></a-box>
     </a-entity>
-    <a-plane id="balao" position="0 2.2 0" width="3" height="1.04" material="shader: flat; transparent: true" look-at-cam
+    <a-plane id="balao" position="0 2.35 0" width="2.4" height="0.84" material="shader: flat; transparent: true" look-at-cam
       ctext="text: Olá, Guardião!; size: 50; color: #10273D; bg: #FFFFFF; w: 860; h: 300"></a-plane>
   </a-entity>
 
@@ -801,7 +801,7 @@ if (window.AFRAME) {
     <button class="btn btn-2d" id="btnMenu2D" type="button">📱 INICIAR NO MODO 2D</button>
     <button class="btn btn-ghost" id="btnMenuRank" type="button">🏆 Ver ranking</button>
     <button class="btn btn-ghost" id="btnMenuCfg" type="button">⚙ Painel do professor</button>
-    <p class="foot">Projeto da 7ª série — Educação Adventista · Meta Quest 2</p>
+    <p class="foot">Projeto da 7ª série — Educação Adventista · Meta Quest 2<br>Voz: Piper TTS, modelo pt-BR “edresson” (CC BY 4.0, TTS-Portuguese-Corpus) · Modelos 3D: pmndrs/market-assets (CC0)</p>
   </div>
 
   <div class="screen" id="scrPainel" hidden>
@@ -949,6 +949,7 @@ function toast(msg){
 /* ================== ÁUDIO ================== */
 var AC=null, aguaGain=null;
 function audioInit(){
+  try{ preCarregaFalas(); }catch(e){}
   if (AC) return;
   try{
     AC = new (window.AudioContext||window.webkitAudioContext)();
@@ -1112,17 +1113,40 @@ function falarTTS(txt){
 }
 /* fala: 1º tenta áudio gravado (falas/<chave>.mp3 no site — funciona em QUALQUER aparelho,
    inclusive Quest 2, que não oferece vozes de sistema ao navegador); senão cai no TTS */
-var falaAtual=null;
+var falaAtual=null, FALAS={};
+var FALA_KEYS=['abertura','reta_final','erro','fim_sucesso','fim_tempo',
+  'acerto_banheiro','acerto_pia','acerto_cozinha','acerto_filtro','acerto_jardim','acerto_caixa','acerto_garagem','acerto_servico','acerto_maquina',
+  'missao_banheiro','missao_pia','missao_cozinha','missao_filtro','missao_jardim','missao_caixa','missao_garagem','missao_servico','missao_maquina'];
+/* pré-carrega as falas no 1º toque (libera o áudio no Quest e evita atraso) */
+function preCarregaFalas(){
+  FALA_KEYS.forEach(function(k){
+    if(FALAS[k]) return;
+    try{ var a=new Audio('falas/'+k+'.mp3'); a.preload='auto'; FALAS[k]=a; }catch(e){}
+  });
+}
+function abaixaMusica(dur){
+  try{
+    if(!rockGain||!AC) return;
+    var g=rockGain.gain, base=g.value>0.05?g.value:0.09;
+    g.cancelScheduledValues(AC.currentTime);
+    g.setTargetAtTime(base*0.35, AC.currentTime, 0.08);
+    g.setTargetAtTime(base, AC.currentTime+dur, 0.3);
+  }catch(e){}
+}
 function falar(txt, key){
   if(key){
     try{
-      if(falaAtual){ try{ falaAtual.pause(); }catch(e){} }
-      var a=new Audio('falas/'+key+'.mp3');
-      falaAtual=a;
-      a.onerror=function(){ falarTTS(txt); };
+      if(falaAtual){ try{ falaAtual.pause(); falaAtual.currentTime=0; }catch(e){} }
+      var a=FALAS[key] || new Audio('falas/'+key+'.mp3');
+      FALAS[key]=a; falaAtual=a;
+      var caiu=false;
+      function reserva(){ if(caiu) return; caiu=true; falarTTS(txt); }
+      a.onerror=reserva;
       try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
+      try{ a.currentTime=0; }catch(e){}
       var p=a.play();
-      if(p && p.catch) p.catch(function(){ falarTTS(txt); });
+      if(p && p.catch) p.catch(reserva);
+      abaixaMusica(isFinite(a.duration)&&a.duration>0 ? a.duration : 5);
       return;
     }catch(e){}
   }

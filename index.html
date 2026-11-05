@@ -444,6 +444,8 @@ if (window.AFRAME) {
       <a-box position="0.735 0.05 0" width="1.44" height="0.08" depth="0.09" color="#D9A520"></a-box>
       <a-plane position="0.735 1.95 0.04" width="1.0" height="1.15" color="#BDE6F7" material="metalness:.3;roughness:.1"></a-plane>
       <a-plane position="0.735 1.95 -0.04" rotation="0 180 0" width="1.0" height="1.15" color="#BDE6F7" material="metalness:.3;roughness:.1"></a-plane>
+      <a-plane position="0.735 1.95 0.045" width="0.82" height="0.82" material="src: #logoimg; shader: flat; opacity: 0.95; transparent: true"></a-plane>
+      <a-plane position="0.735 1.95 -0.045" rotation="0 180 0" width="0.82" height="0.82" material="src: #logoimg; shader: flat; opacity: 0.95; transparent: true"></a-plane>
       <a-sphere position="1.3 1.25 0.07" radius="0.05" color="#D9A520"></a-sphere>
       <a-sphere position="1.3 1.25 -0.07" radius="0.05" color="#D9A520"></a-sphere>
     </a-entity>
@@ -453,13 +455,18 @@ if (window.AFRAME) {
       <a-box position="-0.735 0.05 0" width="1.44" height="0.08" depth="0.09" color="#D9A520"></a-box>
       <a-plane position="-0.735 1.95 0.04" width="1.0" height="1.15" color="#BDE6F7" material="metalness:.3;roughness:.1"></a-plane>
       <a-plane position="-0.735 1.95 -0.04" rotation="0 180 0" width="1.0" height="1.15" color="#BDE6F7" material="metalness:.3;roughness:.1"></a-plane>
+      <a-plane position="-0.735 1.95 0.045" width="0.82" height="0.82" material="src: #logoimg; shader: flat; opacity: 0.95; transparent: true"></a-plane>
+      <a-plane position="-0.735 1.95 -0.045" rotation="0 180 0" width="0.82" height="0.82" material="src: #logoimg; shader: flat; opacity: 0.95; transparent: true"></a-plane>
       <a-sphere position="-1.3 1.25 0.07" radius="0.05" color="#D9A520"></a-sphere>
       <a-sphere position="-1.3 1.25 -0.07" radius="0.05" color="#D9A520"></a-sphere>
     </a-entity>
     <!-- brilho mágico ao abrir -->
     <a-ring id="portal_brilho" position="0 1.45 0" radius-inner="1.1" radius-outer="1.35" color="#FFD34D" visible="false"
       material="shader: flat; opacity: 0.0; transparent: true; side: double"></a-ring>
-    <a-plane position="0 0.4 0.35" rotation="-90 0 0" width="2.6" height="0.5" ctext="text: CHEGUE PERTO: A PORTA ABRE; size: 40; color: #133B63; bg: #FFD34DCC; w: 820; h: 150" material="shader: flat; transparent: true"></a-plane>
+    <!-- tapete de boas-vindas na entrada -->
+    <a-box position="0 0.012 1.05" width="2.9" height="0.024" depth="1.1" color="#D9A520"></a-box>
+    <a-box position="0 0.026 1.05" width="2.74" height="0.012" depth="0.94" color="#133B63"></a-box>
+    <a-plane position="0 0.034 1.05" rotation="-90 0 0" width="2.6" height="0.86" ctext="text: BEM-VINDO À\nESCOLA ADVENTISTA; size: 74; color: #FFFFFF; bg: #133B63; w: 900; h: 300" material="shader: flat; transparent: true"></a-plane>
   </a-entity>
 
   <!-- MASCOTE GOTINHA: à esquerda do portão, recepcionando sem bloquear a entrada -->
@@ -860,7 +867,7 @@ if (window.AFRAME) {
     <button class="btn btn-2d" id="btnMenu2D" type="button">📱 INICIAR NO MODO 2D</button>
     <button class="btn btn-ghost" id="btnMenuRank" type="button">🏆 Ver ranking</button>
     <button class="btn btn-ghost" id="btnMenuCfg" type="button">⚙ Painel do professor</button>
-    <p class="foot">Projeto da 7ª série — Educação Adventista · Meta Quest 2<br>Voz: Piper TTS, modelo pt-BR “edresson” (CC BY 4.0, TTS-Portuguese-Corpus) · Modelos 3D: pmndrs/market-assets (CC0)</p>
+    <p class="foot">Projeto da 7ª série — Educação Adventista · Meta Quest 2<br>Voz: Kokoro TTS, voz “Dora” pt-BR (Apache 2.0) · Modelos 3D: pmndrs/market-assets (CC0)</p>
   </div>
 
   <div class="screen" id="scrPainel" hidden>

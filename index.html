@@ -136,7 +136,7 @@ if (window.AFRAME) {
       c.font='bold '+d.size+'px "Segoe UI", Arial, sans-serif';
       var lines=String(d.text).replace(/\\n/g,'\n').split('\n');
       var lh=d.size*1.22, y0=H/2-(lines.length-1)*lh/2;
-      for(var i=0;i<lines.length;i++){ c.fillText(lines[i], W/2, y0+i*lh, W-30); }
+      for(var i=0;i<lines.length;i++){ c.fillText(lines[i], W/2, y0+i*lh, W*0.86); }
       this.tex.needsUpdate=true;
     }
   });
@@ -246,7 +246,7 @@ if (window.AFRAME) {
         [8.6,0.6,1.5],                           /* caixa d'água */
         [-11,-11,0.7],[11,-11,0.7],[-12,6,0.7],  /* árvores */
         [-1.6,5.5,0.3],[1.6,5.5,0.3],            /* pórtico */
-        [-4.3,5.4,0.55],                         /* mascote (ao lado do portão) */
+        [-3.1,6.1,0.55],                         /* mascote (ao lado do portão) */
         [-1.9,2.3,0.55],[1.9,2.3,0.55]           /* bancos da praça */
       ];
       var self=this;
@@ -290,6 +290,41 @@ if (window.AFRAME) {
         if(t-this.lastThud>450 && (Math.abs(px)+Math.abs(pz))>0.015){
           this.lastThud=t;
           if(window.__thud) window.__thud();
+        }
+      }
+    }
+  });
+
+  /* portão automático: portas abrem (com brilho, som e vibração) quando o jogador se aproxima */
+  AFRAME.registerComponent('portao-auto', {
+    init: function(){
+      this.ang=0; this.alvo=0; this.aberto=false;
+      this.v=new THREE.Vector3(); this.p=new THREE.Vector3();
+    },
+    tick: function(t,dt){
+      if(!dt) return;
+      var cam=document.getElementById('cam'), pe=document.getElementById('porta_esq'), pd=document.getElementById('porta_dir');
+      if(!cam||!pe||!pd) return;
+      cam.object3D.getWorldPosition(this.v);
+      this.el.object3D.getWorldPosition(this.p);
+      var d=Math.hypot(this.v.x-this.p.x, this.v.z-this.p.z);
+      if(d<3.0 && !this.aberto){ this.aberto=true; if(window.__portaAbre) window.__portaAbre(); }
+      if(d>3.6 && this.aberto){ this.aberto=false; if(window.__portaFecha) window.__portaFecha(); }
+      this.alvo = this.aberto ? 1 : 0;
+      var vel = (this.aberto ? 2.6 : 1.4) * dt/1000;
+      if(this.ang < this.alvo) this.ang=Math.min(this.alvo, this.ang+vel);
+      else if(this.ang > this.alvo) this.ang=Math.max(this.alvo, this.ang-vel);
+      var e=this.ang<0.5 ? 2*this.ang*this.ang : 1-Math.pow(-2*this.ang+2,2)/2;
+      var A=e*1.75; /* ~100 graus, abrindo para dentro da praça */
+      pe.object3D.rotation.y = A;
+      pd.object3D.rotation.y = -A;
+      var br=document.getElementById('portal_brilho');
+      if(br){
+        var op = this.aberto ? Math.max(0, 0.7*(1-Math.abs(e-0.5)*2)) : 0;
+        br.object3D.visible = op>0.02;
+        if(br.object3D.visible){
+          var m=br.getObject3D('mesh'); if(m&&m.material){ m.material.opacity=op; }
+          var s=1+e*0.35; br.object3D.scale.set(s,s,s);
         }
       }
     }
@@ -390,21 +425,45 @@ if (window.AFRAME) {
   <a-entity position="2.6 0 5.6"><a-cylinder radius="0.04" height="0.3" position="0 0.15 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.11" position="0 0.35 0" color="#E86BA0"></a-sphere></a-entity>
   <a-entity position="-2.6 0 5.6"><a-cylinder radius="0.04" height="0.3" position="0 0.15 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.11" position="0 0.35 0" color="#F2C53D"></a-sphere></a-entity>
 
-  <!-- PORTÃO DE ENTRADA com a faixa da feira (jogador nasce do lado de fora, de frente) -->
-  <a-entity position="0 0 5.5">
-    <a-box position="-1.6 1.5 0" width="0.24" height="3" depth="0.24" color="#133B63"></a-box>
-    <a-box position="1.6 1.5 0" width="0.24" height="3" depth="0.24" color="#133B63"></a-box>
-    <a-box position="0 3.1 0" width="3.7" height="0.26" depth="0.28" color="#D9A520"></a-box>
-    <!-- face externa (vista por quem chega) -->
-    <a-plane position="0 2.35 0.03" width="1.3" height="1.3" material="src: #logoimg; shader: flat"></a-plane>
-    <a-plane position="0 1.35 0.03" width="3.3" height="0.6" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 48; color: #FFFFFF; bg: #133B63; w: 680; h: 136" material="shader: flat; transparent: true"></a-plane>
-    <!-- face interna (vista de dentro da praça) -->
-    <a-plane position="0 2.35 -0.03" rotation="0 180 0" width="1.3" height="1.3" material="src: #logoimg; shader: flat"></a-plane>
-    <a-plane position="0 1.35 -0.03" rotation="0 180 0" width="3.3" height="0.6" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 48; color: #FFFFFF; bg: #133B63; w: 680; h: 136" material="shader: flat; transparent: true"></a-plane>
+  <!-- PORTÃO DE ENTRADA: faixa e logo ACIMA da passagem + portas que abrem ao se aproximar -->
+  <a-entity id="portao" position="0 0 5.5" portao-auto>
+    <a-box position="-1.6 1.85 0" width="0.26" height="3.7" depth="0.26" color="#133B63"></a-box>
+    <a-box position="1.6 1.85 0" width="0.26" height="3.7" depth="0.26" color="#133B63"></a-box>
+    <a-box position="0 3.78 0" width="3.8" height="0.26" depth="0.3" color="#D9A520"></a-box>
+    <!-- logo no topo do portão -->
+    <a-box position="0 4.45 0" width="1.12" height="1.12" depth="0.08" color="#FFFFFF"></a-box>
+    <a-plane position="0 4.45 0.045" width="1" height="1" material="src: #logoimg; shader: flat"></a-plane>
+    <a-plane position="0 4.45 -0.045" rotation="0 180 0" width="1" height="1" material="src: #logoimg; shader: flat"></a-plane>
+    <!-- faixa da feira (dupla-face), centralizada e com margem, acima das portas -->
+    <a-plane position="0 3.25 0.03" width="3.0" height="0.62" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 54; color: #FFFFFF; bg: #133B63; w: 980; h: 202" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="0 3.25 -0.03" rotation="0 180 0" width="3.0" height="0.62" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 54; color: #FFFFFF; bg: #133B63; w: 980; h: 202" material="shader: flat; transparent: true"></a-plane>
+    <!-- folhas da porta (abrem para dentro da praça) -->
+    <a-entity id="porta_esq" position="-1.47 0 0">
+      <a-box position="0.735 1.42 0" width="1.44" height="2.8" depth="0.07" color="#1F5A8A" material="metalness:.2;roughness:.5"></a-box>
+      <a-box position="0.735 2.79 0" width="1.44" height="0.08" depth="0.09" color="#D9A520"></a-box>
+      <a-box position="0.735 0.05 0" width="1.44" height="0.08" depth="0.09" color="#D9A520"></a-box>
+      <a-plane position="0.735 1.95 0.04" width="1.0" height="1.15" color="#BDE6F7" material="metalness:.3;roughness:.1"></a-plane>
+      <a-plane position="0.735 1.95 -0.04" rotation="0 180 0" width="1.0" height="1.15" color="#BDE6F7" material="metalness:.3;roughness:.1"></a-plane>
+      <a-sphere position="1.3 1.25 0.07" radius="0.05" color="#D9A520"></a-sphere>
+      <a-sphere position="1.3 1.25 -0.07" radius="0.05" color="#D9A520"></a-sphere>
+    </a-entity>
+    <a-entity id="porta_dir" position="1.47 0 0">
+      <a-box position="-0.735 1.42 0" width="1.44" height="2.8" depth="0.07" color="#1F5A8A" material="metalness:.2;roughness:.5"></a-box>
+      <a-box position="-0.735 2.79 0" width="1.44" height="0.08" depth="0.09" color="#D9A520"></a-box>
+      <a-box position="-0.735 0.05 0" width="1.44" height="0.08" depth="0.09" color="#D9A520"></a-box>
+      <a-plane position="-0.735 1.95 0.04" width="1.0" height="1.15" color="#BDE6F7" material="metalness:.3;roughness:.1"></a-plane>
+      <a-plane position="-0.735 1.95 -0.04" rotation="0 180 0" width="1.0" height="1.15" color="#BDE6F7" material="metalness:.3;roughness:.1"></a-plane>
+      <a-sphere position="-1.3 1.25 0.07" radius="0.05" color="#D9A520"></a-sphere>
+      <a-sphere position="-1.3 1.25 -0.07" radius="0.05" color="#D9A520"></a-sphere>
+    </a-entity>
+    <!-- brilho mágico ao abrir -->
+    <a-ring id="portal_brilho" position="0 1.45 0" radius-inner="1.1" radius-outer="1.35" color="#FFD34D" visible="false"
+      material="shader: flat; opacity: 0.0; transparent: true; side: double"></a-ring>
+    <a-plane position="0 0.4 0.35" rotation="-90 0 0" width="2.6" height="0.5" ctext="text: CHEGUE PERTO: A PORTA ABRE; size: 40; color: #133B63; bg: #FFD34DCC; w: 820; h: 150" material="shader: flat; transparent: true"></a-plane>
   </a-entity>
 
   <!-- MASCOTE GOTINHA: à esquerda do portão, recepcionando sem bloquear a entrada -->
-  <a-entity id="mascote" position="-4.3 0 5.4" rotation="0 40 0">
+  <a-entity id="mascote" position="-3.1 0 6.1" rotation="0 30 0">
     <a-circle rotation="-90 0 0" position="0 .02 0" radius="0.55" color="#000" material="opacity:.16;transparent:true"></a-circle>
     <a-entity animation="property: position; from: 0 0.05 0; to: 0 0.28 0; dir: alternate; dur: 1400; loop: true; easing: easeInOutSine">
       <a-sphere radius="0.42" scale="1 1.22 1" position="0 0.75 0" color="#3EB8F0"></a-sphere>
@@ -762,7 +821,7 @@ if (window.AFRAME) {
   <a-entity class="clickable tp" data-tp="0 0 3.2" position="0 0.02 3.2"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
 
   <!-- jogador: nasce do lado de fora, de frente para o portão da feira -->
-  <a-entity id="rig" position="0 0 8.4">
+  <a-entity id="rig" position="0 0 9.6">
     <a-entity id="cam" camera look-controls wasd-controls="acceleration: 28" position="0 1.6 0">
       <a-plane id="hudvr" visible="false" position="0.52 0.42 -1.3" rotation="-8 -16 0" width="0.78" height="0.12" material="shader: flat; transparent: true"
         ctext="text: ; size: 52; color: #FFFFFF; bg: #10273DB8; w: 1020; h: 156"></a-plane>
@@ -1061,6 +1120,29 @@ function musicStop(){
   try{ if(rockSrc){ rockSrc.stop(); rockSrc.disconnect(); } }catch(e){}
   rockSrc=null;
 }
+/* porta: "whoosh" mágico + rangido grave + vibração leve */
+function vibra(forca,ms){
+  try{
+    Array.prototype.forEach.call(document.querySelectorAll('[laser-controls]'),function(h){
+      var tc=h.components['tracked-controls'];
+      var gp=tc&&tc.controller&&tc.controller.gamepad;
+      if(gp&&gp.hapticActuators&&gp.hapticActuators[0]) gp.hapticActuators[0].pulse(forca,ms);
+    });
+  }catch(e){}
+}
+window.__portaAbre=function(){
+  if(!AC) return;
+  try{
+    var o=AC.createOscillator(), g=AC.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(70,AC.currentTime); o.frequency.linearRampToValueAtTime(110,AC.currentTime+0.5);
+    g.gain.setValueAtTime(0.0001,AC.currentTime); g.gain.linearRampToValueAtTime(0.05,AC.currentTime+0.1); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.6);
+    var f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=400;
+    o.connect(f); f.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+0.65);
+  }catch(e){}
+  [784,988,1175,1568].forEach(function(fq,i){ nota(fq,0.05+i*0.07,0.35,'sine',0.07); });
+  vibra(0.35,120);
+};
+window.__portaFecha=function(){ if(AC) nota(90,0,0.25,'triangle',0.12); };
 window.__thud=function(){
   nota(70,0,0.15,'sine',0.28); nota(45,0,0.22,'triangle',0.22);
   try{
@@ -1414,7 +1496,7 @@ function resetCena(){
     }
   });
   setVis('painelfinal',false); setVis('seta',false);
-  if(rig){ rig.setAttribute('position','0 0 8.4'); rig.object3D.rotation.y=0; }
+  if(rig){ rig.setAttribute('position','0 0 9.6'); rig.object3D.rotation.y=0; }
 }
 /* garante que o jogador comece olhando para o portão da feira (de fora para dentro) */
 function virarParaMascote(){

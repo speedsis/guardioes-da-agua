@@ -246,7 +246,7 @@ if (window.AFRAME) {
         [8.6,0.6,1.5],                           /* caixa d'água */
         [-11,-11,0.7],[11,-11,0.7],[-12,6,0.7],  /* árvores */
         [-1.6,5.5,0.3],[1.6,5.5,0.3],            /* pórtico */
-        [0,-2.6,0.55],                           /* mascote */
+        [-3.4,4.8,0.55],                         /* mascote (ao lado do portão) */
         [-1.9,2.3,0.55],[1.9,2.3,0.55]           /* bancos da praça */
       ];
       var self=this;
@@ -390,17 +390,21 @@ if (window.AFRAME) {
   <a-entity position="2.6 0 5.6"><a-cylinder radius="0.04" height="0.3" position="0 0.15 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.11" position="0 0.35 0" color="#E86BA0"></a-sphere></a-entity>
   <a-entity position="-2.6 0 5.6"><a-cylinder radius="0.04" height="0.3" position="0 0.15 0" color="#3F8F3F"></a-cylinder><a-sphere radius="0.11" position="0 0.35 0" color="#F2C53D"></a-sphere></a-entity>
 
-  <!-- pórtico com a logo da escola (atrás do ponto inicial) -->
-  <a-entity position="0 0 5.5" rotation="0 180 0">
+  <!-- PORTÃO DE ENTRADA com a faixa da feira (jogador nasce do lado de fora, de frente) -->
+  <a-entity position="0 0 5.5">
     <a-box position="-1.6 1.5 0" width="0.24" height="3" depth="0.24" color="#133B63"></a-box>
     <a-box position="1.6 1.5 0" width="0.24" height="3" depth="0.24" color="#133B63"></a-box>
     <a-box position="0 3.1 0" width="3.7" height="0.26" depth="0.28" color="#D9A520"></a-box>
+    <!-- face externa (vista por quem chega) -->
     <a-plane position="0 2.35 0.03" width="1.3" height="1.3" material="src: #logoimg; shader: flat"></a-plane>
-    <a-plane position="0 1.35 0.03" width="3.1" height="0.55" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 44; color: #FFFFFF; bg: #133B63; w: 640; h: 128" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="0 1.35 0.03" width="3.3" height="0.6" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 48; color: #FFFFFF; bg: #133B63; w: 680; h: 136" material="shader: flat; transparent: true"></a-plane>
+    <!-- face interna (vista de dentro da praça) -->
+    <a-plane position="0 2.35 -0.03" rotation="0 180 0" width="1.3" height="1.3" material="src: #logoimg; shader: flat"></a-plane>
+    <a-plane position="0 1.35 -0.03" rotation="0 180 0" width="3.3" height="0.6" ctext="text: FEIRA DE CIÊNCIAS\nEducação Adventista — 7ª série; size: 48; color: #FFFFFF; bg: #133B63; w: 680; h: 136" material="shader: flat; transparent: true"></a-plane>
   </a-entity>
 
-  <!-- MASCOTE GOTINHA -->
-  <a-entity id="mascote" position="0 0 -2.6">
+  <!-- MASCOTE GOTINHA: à esquerda do portão, recepcionando sem bloquear a entrada -->
+  <a-entity id="mascote" position="-3.4 0 4.8" rotation="0 46 0">
     <a-circle rotation="-90 0 0" position="0 .02 0" radius="0.55" color="#000" material="opacity:.16;transparent:true"></a-circle>
     <a-entity animation="property: position; from: 0 0.05 0; to: 0 0.28 0; dir: alternate; dur: 1400; loop: true; easing: easeInOutSine">
       <a-sphere radius="0.42" scale="1 1.22 1" position="0 0.75 0" color="#3EB8F0"></a-sphere>
@@ -413,8 +417,8 @@ if (window.AFRAME) {
       <a-sphere radius="0.036" position="0.14 0.85 0.425" color="#10273D"></a-sphere>
       <a-box width="0.17" height="0.045" depth="0.03" position="0 0.64 0.4" color="#0E3A57"></a-box>
     </a-entity>
-    <a-plane id="balao" position="0 2.1 0" width="2.5" height="0.86" material="shader: flat; transparent: true" look-at-cam
-      ctext="text: Olá, Guardião!; size: 42; color: #10273D; bg: #FFFFFF; w: 800; h: 276"></a-plane>
+    <a-plane id="balao" position="0 2.2 0" width="3" height="1.04" material="shader: flat; transparent: true" look-at-cam
+      ctext="text: Olá, Guardião!; size: 50; color: #10273D; bg: #FFFFFF; w: 860; h: 300"></a-plane>
   </a-entity>
 
   <!-- seta-guia dourada -->
@@ -474,7 +478,7 @@ if (window.AFRAME) {
       <a-torus radius="0.3" radius-tubular="0.022" color="#FFD34D" material="shader: flat"
         animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
-    <a-plane position="-0.3 1.05 0.15" width="1.6" height="0.3" ctext="text: Feche o registro!; size: 40; color: #0E3A57; bg: #FFFFFF; w: 600; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="-0.3 1.05 0.15" width="1.6" height="0.3" ctext="text: Feche o registro!; size: 46; color: #0E3A57; bg: #FFFFFF; w: 600; h: 120" material="shader: flat; transparent: true"></a-plane>
     <!-- ALVO: torneira da pia (escovação) -->
     <a-entity id="alvo_pia" class="clickable" position="-1.74 1.22 -0.25">
       <a-sphere radius="0.38" material="opacity: 0; transparent: true"></a-sphere>
@@ -484,7 +488,7 @@ if (window.AFRAME) {
         animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
     <a-cylinder position="-1.28 1.08 -0.12" radius="0.045" height="0.12" color="#2FA8DD" open-ended="true" material="side: double"></a-cylinder>
-    <a-plane position="-1.55 1.68 -0.08" width="1.9" height="0.3" ctext="text: Escove com a torneira FECHADA!; size: 36; color: #0E3A57; bg: #FFFFFF; w: 760; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="-1.55 1.68 -0.08" width="1.9" height="0.3" ctext="text: Escove com a torneira FECHADA!; size: 42; color: #0E3A57; bg: #FFFFFF; w: 760; h: 120" material="shader: flat; transparent: true"></a-plane>
     <a-entity id="ok_banheiro" visible="false"><a-circle position="0.6 2.85 -0.6" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0.6 2.85 -0.58" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
     <a-entity id="ok_pia" visible="false"><a-circle position="-0.6 2.85 -0.6" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="-0.6 2.85 -0.58" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
@@ -539,14 +543,14 @@ if (window.AFRAME) {
       <a-torus radius="0.24" radius-tubular="0.02" color="#FFD34D" material="shader: flat"
         animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
-    <a-plane position="-0.62 2.15 -0.25" width="1.6" height="0.3" ctext="text: Feche a torneira!; size: 40; color: #5A3A10; bg: #FFFFFF; w: 640; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="-0.62 2.15 -0.25" width="1.6" height="0.3" ctext="text: Feche a torneira!; size: 46; color: #5A3A10; bg: #FFFFFF; w: 640; h: 120" material="shader: flat; transparent: true"></a-plane>
     <a-entity id="alvo_filtro" class="clickable" position="1.7 1.68 -0.48">
       <a-sphere radius="0.38" material="opacity: 0; transparent: true"></a-sphere>
       <a-torus radius="0.09" radius-tubular="0.032" color="#E24B3B" material="metalness:.3;roughness:.4"></a-torus>
       <a-torus radius="0.17" radius-tubular="0.015" color="#FFD34D" material="shader: flat"
         animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
-    <a-plane position="1.7 2.5 -0.45" width="1.4" height="0.28" ctext="text: Filtro pingando!; size: 40; color: #5A3A10; bg: #FFFFFF; w: 560; h: 112" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="1.7 2.5 -0.45" width="1.4" height="0.28" ctext="text: Filtro pingando!; size: 46; color: #5A3A10; bg: #FFFFFF; w: 560; h: 112" material="shader: flat; transparent: true"></a-plane>
     <a-entity id="ok_cozinha" visible="false"><a-circle position="-0.6 2.85 -0.6" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="-0.6 2.85 -0.58" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
     <a-entity id="ok_filtro" visible="false"><a-circle position="0.6 2.85 -0.6" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="0.6 2.85 -0.58" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
@@ -615,7 +619,7 @@ if (window.AFRAME) {
     <a-cone position="-0.6 2.75 0" radius-bottom="1" height="0.45" color="#1F618D" material="flatShading: true"></a-cone>
     <a-plane position="-0.6 1.75 0.96" width="1.3" height="0.5" ctext="text: 1000 L; size: 60; color: #FFFFFF; bg: #1F618D; w: 400; h: 150" material="shader: flat; transparent: true"></a-plane>
     <a-entity gltf-model="https://cdn.jsdelivr.net/gh/pmndrs/market-assets@main/files/models/barrel/model.gltf" position="-1.9 0 1.1" scale="1.1 1.1 1.1"></a-entity>
-    <a-plane position="-1.9 0.95 1.1" width="0.9" height="0.26" look-at-cam ctext="text: Reúso de chuva; size: 36; color: #1E5B37; bg: #FFFFFF; w: 440; h: 96" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="-1.9 0.95 1.1" width="0.9" height="0.26" look-at-cam ctext="text: Reúso de chuva; size: 42; color: #1E5B37; bg: #FFFFFF; w: 440; h: 96" material="shader: flat; transparent: true"></a-plane>
     <a-entity id="agua_caixa" position="-0.6 2.45 0">
       <a-sphere radius="0.05" color="#D4F0FF" animation="property: position; from: 0.8 0 0.3; to: 1.05 -2.3 0.45; dur: 700; loop: true; easing: linear"></a-sphere>
       <a-sphere radius="0.05" color="#D4F0FF" animation="property: position; from: -0.75 0 0.4; to: -1 -2.3 0.6; dur: 760; delay: 200; loop: true; easing: linear"></a-sphere>
@@ -630,7 +634,7 @@ if (window.AFRAME) {
       <a-torus radius="0.26" radius-tubular="0.02" color="#FFD34D" material="shader: flat"
         animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
-    <a-plane position="-1.35 0.7 0.95" width="1.7" height="0.3" ctext="text: Conserte a bóia!; size: 40; color: #0E3A57; bg: #FFFFFF; w: 680; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="-1.35 0.7 0.95" width="1.7" height="0.3" ctext="text: Conserte a bóia!; size: 46; color: #0E3A57; bg: #FFFFFF; w: 680; h: 120" material="shader: flat; transparent: true"></a-plane>
     <a-entity id="ok_caixa" visible="false"><a-circle position="-0.6 3.1 1.1" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="-0.6 3.1 1.12" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
 
@@ -716,7 +720,7 @@ if (window.AFRAME) {
       <a-cylinder radius="0.055" height="0.04" rotation="90 0 0" color="#C94F3D"></a-cylinder>
     </a-entity>
     <a-plane position="1.9 1.38 0.36" width="0.5" height="0.18" ctext="text: MEIA; size: 52; color: #7A2E20; bg: #FFFFFF; w: 300; h: 108" material="shader: flat; transparent: true"></a-plane>
-    <a-plane position="1.5 1.72 0.33" width="1.7" height="0.3" ctext="text: Lavar roupa: cheia ou meia?; size: 36; color: #4A2E66; bg: #FFFFFF; w: 760; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="1.5 1.72 0.33" width="1.7" height="0.3" ctext="text: Lavar roupa: cheia ou meia?; size: 42; color: #4A2E66; bg: #FFFFFF; w: 760; h: 120" material="shader: flat; transparent: true"></a-plane>
     <!-- tanque e varal -->
     <a-box position="-1.6 0.5 -0.15" width="0.8" height="0.55" depth="0.6" color="#DFE6EC"></a-box>
     <a-box position="-1.6 0.78 -0.15" width="0.85" height="0.1" depth="0.65" color="#C8D2DA"></a-box>
@@ -742,7 +746,7 @@ if (window.AFRAME) {
       <a-torus radius="0.28" radius-tubular="0.022" color="#FFD34D" material="shader: flat"
         animation="property: scale; from: 1 1 1; to: 1.35 1.35 1.35; dir: alternate; dur: 700; loop: true"></a-torus>
     </a-entity>
-    <a-plane position="0.2 1.9 -0.3" width="2.0" height="0.3" ctext="text: Conserte o vazamento!; size: 40; color: #4A2E66; bg: #FFFFFF; w: 800; h: 120" material="shader: flat; transparent: true"></a-plane>
+    <a-plane position="-0.7 2.1 -0.3" width="2.0" height="0.32" ctext="text: Conserte o vazamento!; size: 44; color: #4A2E66; bg: #FFFFFF; w: 800; h: 128" material="shader: flat; transparent: true"></a-plane>
     <a-entity id="ok_servico" visible="false"><a-circle position="-0.6 2.85 0.3" radius="0.3" color="#2E9E5B"></a-circle><a-plane position="-0.6 2.85 0.32" width="0.42" height="0.42" ctext="text: ✓; size: 100; color: #FFFFFF; w: 160; h: 160" material="shader: flat; transparent: true"></a-plane></a-entity>
     <a-entity id="ok_maquina" visible="false"><a-circle position="1.5 1.95 0.33" radius="0.22" color="#2E9E5B"></a-circle><a-plane position="1.5 1.95 0.35" width="0.3" height="0.3" ctext="text: ✓; size: 90; color: #FFFFFF; w: 140; h: 140" material="shader: flat; transparent: true"></a-plane></a-entity>
   </a-entity>
@@ -755,9 +759,10 @@ if (window.AFRAME) {
   <a-entity class="clickable tp" data-tp="3.9 0 3" data-room="garagem" position="3.9 0.02 3"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
   <a-entity class="clickable tp" data-tp="-3.9 0 3" data-room="servico" position="-3.9 0.02 3"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
   <a-entity class="clickable tp" data-tp="0 0 0" position="0 0.02 0.9"><a-circle rotation="-90 0 0" radius="0.6" color="#D9A520" material="opacity:.85;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#FFD34D" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
+  <a-entity class="clickable tp" data-tp="0 0 3.2" position="0 0.02 3.2"><a-circle rotation="-90 0 0" radius="0.6" color="#2FA8DD" material="opacity:.8;transparent:true"></a-circle><a-torus rotation="-90 0 0" radius="0.6" radius-tubular="0.035" color="#8FD9FF" animation="property: scale; from: 1 1 1; to: 1.15 1.15 1.15; dir: alternate; dur: 900; loop: true"></a-torus></a-entity>
 
-  <!-- jogador -->
-  <a-entity id="rig" position="0 0 0">
+  <!-- jogador: nasce do lado de fora, de frente para o portão da feira -->
+  <a-entity id="rig" position="0 0 8.4">
     <a-entity id="cam" camera look-controls wasd-controls="acceleration: 28" position="0 1.6 0">
       <a-plane id="hudvr" visible="false" position="0.52 0.42 -1.3" rotation="-8 -16 0" width="0.78" height="0.12" material="shader: flat; transparent: true"
         ctext="text: ; size: 52; color: #FFFFFF; bg: #10273DB8; w: 1020; h: 156"></a-plane>
@@ -1095,7 +1100,7 @@ try{
     window.speechSynthesis.onvoiceschanged=escolheVoz;
   }
 }catch(e){}
-function falar(txt){
+function falarTTS(txt){
   try{
     if(!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
@@ -1104,6 +1109,24 @@ function falar(txt){
     if(vozBR) u.voice=vozBR;
     window.speechSynthesis.speak(u);
   }catch(e){}
+}
+/* fala: 1º tenta áudio gravado (falas/<chave>.mp3 no site — funciona em QUALQUER aparelho,
+   inclusive Quest 2, que não oferece vozes de sistema ao navegador); senão cai no TTS */
+var falaAtual=null;
+function falar(txt, key){
+  if(key){
+    try{
+      if(falaAtual){ try{ falaAtual.pause(); }catch(e){} }
+      var a=new Audio('falas/'+key+'.mp3');
+      falaAtual=a;
+      a.onerror=function(){ falarTTS(txt); };
+      try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
+      var p=a.play();
+      if(p && p.catch) p.catch(function(){ falarTTS(txt); });
+      return;
+    }catch(e){}
+  }
+  falarTTS(txt);
 }
 
 /* ================== RANKING por tempo ================== */
@@ -1133,9 +1156,9 @@ function setCtext(id, txt){
   try{ el.setAttribute('ctext','text',txt); }catch(e){}
 }
 var balaoH=null;
-function balao(txt, voz){
+function balao(txt, voz, key){
   setCtext('balao', txt);
-  if(voz!==false) falar(txt);
+  if(voz!==false) falar(txt, key);
   clearTimeout(balaoH);
   balaoH=setTimeout(function(){ setCtext('balao','Siga a seta dourada!'); },5200);
 }
@@ -1191,7 +1214,7 @@ function acerto(key, alvoEl){
   popup(alvoEl, '+'+PONTOS[key]+' pts', '#2E9E5B');
   setTimeout(function(){ popup(alvoEl, '💧 +'+LITROS[key]+' litros!', '#0E6FA3'); }, 450);
   var prox=proximoDesafio();
-  balao(FRASES[key] + (prox ? '\nAgora: '+NOMES[prox]+'!' : ''));
+  balao(FRASES[key] + (prox ? '\nAgora: '+NOMES[prox]+'!' : ''), true, 'acerto_'+key);
   hud();
   if(S.feitos===S.total) setTimeout(function(){ fimDeJogo(true); },900);
 }
@@ -1202,7 +1225,7 @@ function erro(key, alvoEl){
   popup(alvoEl,'-20 pts','#C94F3D');
   if(CFG.pen>0) S.t+=CFG.pen;
   somErro();
-  balao('Ops! Assim gasta muita água.\nClique na opção com anel dourado!');
+  balao('Ops! Assim gasta muita água.\nClique na opção com anel dourado!', true, 'erro');
   hud();
 }
 var ACOES = {
@@ -1234,7 +1257,7 @@ function executa(el){
     if(room && S){
       var g=GRUPO[room]||[room];
       for(var i=0;i<g.length;i++){
-        if(CFG.ativas[g[i]] && !S.done[g[i]]){ balao(MISSAO[g[i]]); break; }
+        if(CFG.ativas[g[i]] && !S.done[g[i]]){ balao(MISSAO[g[i]], true, 'missao_'+g[i]); break; }
       }
     }
   }
@@ -1367,9 +1390,9 @@ function resetCena(){
     }
   });
   setVis('painelfinal',false); setVis('seta',false);
-  if(rig){ rig.setAttribute('position','0 0 0'); rig.object3D.rotation.y=0; }
+  if(rig){ rig.setAttribute('position','0 0 8.4'); rig.object3D.rotation.y=0; }
 }
-/* garante que o jogador comece olhando para o Gotinha (frente, -z) */
+/* garante que o jogador comece olhando para o portão da feira (de fora para dentro) */
 function virarParaMascote(){
   try{
     var cam=$('cam');
@@ -1401,12 +1424,12 @@ function comecar(vr){
     }catch(e){ toast('VR não ativou — jogando no modo 2D.'); }
   }
   musicStart('rock'); makeLoop('tensa');
-  balao('Atenção, Guardião! '+S.total+' missões.\nQuanto mais rápido, melhor!');
+  balao('Atenção, Guardião! '+S.total+' missões.\nQuanto mais rápido, melhor!', true, 'abertura');
   clearInterval(timerId);
   timerId=setInterval(function(){
     S.t++;
     var resta=CFG.cap-S.t;
-    if(resta===30 && !S.fim){ musicStop(); musicStart('tensa'); balao('Rápido, Guardião!\nSó 30 segundos!'); }
+    if(resta===30 && !S.fim){ musicStop(); musicStart('tensa'); balao('Rápido, Guardião!\nSó 30 segundos!', true, 'reta_final'); }
     if(resta<=10 && resta>0) somTick();
     hud();
     if(resta<=0) fimDeJogo(false);
@@ -1440,8 +1463,8 @@ function fimDeJogo(completou){
   var nome=($('inpNome').value||'Guardião').trim()||'Guardião';
   rankSave(nome, S.feitos, S.total, S.t, S.pts, S.litros);
   var cls=classif(S.pts);
-  if(completou) falar('Parabéns, '+nome+'! '+S.pts+' pontos e '+S.litros+' litros de água economizados!');
-  else falar('Tempo esgotado, '+nome+'! Você fez '+S.pts+' pontos e economizou '+S.litros+' litros.');
+  if(completou) falar('Parabéns, '+nome+'! '+S.pts+' pontos e '+S.litros+' litros de água economizados!', 'fim_sucesso');
+  else falar('Tempo esgotado, '+nome+'! Você fez '+S.pts+' pontos e economizou '+S.litros+' litros.', 'fim_tempo');
   setCtext('painelfinal', (completou?'MISSÃO CONCLUÍDA!':'TEMPO ESGOTADO!')+'\n\n'+nome+'\n⭐ '+S.pts+' pontos\n💧 '+S.litros+' litros economizados\n✔ '+S.feitos+'/'+S.total+' · ⏱ '+fmt(S.t));
   setVis('painelfinal',true); setVis('seta',false);
   setTimeout(function(){

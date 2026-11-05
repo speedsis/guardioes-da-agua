@@ -330,6 +330,16 @@ if (window.AFRAME) {
     }
   });
 
+  /* mostra o elemento só quando o jogador está perto (evita balões soltos no cenário) */
+  AFRAME.registerComponent('so-perto',{ schema:{dist:{default:6.5}},
+    init:function(){ this.a=new THREE.Vector3(); this.b=new THREE.Vector3(); },
+    tick:function(){
+      var cam=document.getElementById('cam'); if(!cam) return;
+      cam.object3D.getWorldPosition(this.a); this.el.object3D.getWorldPosition(this.b);
+      this.el.object3D.visible = Math.hypot(this.a.x-this.b.x, this.a.z-this.b.z) < this.data.dist;
+    }
+  });
+
   /* placas sempre viradas para o jogador */
   AFRAME.registerComponent('look-at-cam',{ tick:function(){
     var cam=document.getElementById('cam'); if(!cam) return;
@@ -483,7 +493,7 @@ if (window.AFRAME) {
       <a-sphere radius="0.036" position="0.14 0.85 0.425" color="#10273D"></a-sphere>
       <a-box width="0.17" height="0.045" depth="0.03" position="0 0.64 0.4" color="#0E3A57"></a-box>
     </a-entity>
-    <a-plane id="balao" position="0 2.35 0" width="2.4" height="0.84" material="shader: flat; transparent: true" look-at-cam
+    <a-plane id="balao" position="0 2.35 0" width="2.4" height="0.84" material="shader: flat; transparent: true" look-at-cam so-perto="dist: 6.5"
       ctext="text: Olá, Guardião!; size: 50; color: #10273D; bg: #FFFFFF; w: 860; h: 300"></a-plane>
   </a-entity>
 
